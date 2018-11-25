@@ -1,0 +1,8 @@
+.idea/
+
+bin/
+pkg/
+run.sh
+!vendor/src/github.com/pkg
+
+dev.yaml
