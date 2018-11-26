@@ -24,6 +24,17 @@ func New(strg *storage.RedisStorage) *GameFactory {
 	}
 }
 
+func (g *GameFactory) Magic() (map[*model.HellMan]*model.HellMan, error) {
+	//list, err := g.storage.ListEnrolled()
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	out := make(map[*model.HellMan]*model.HellMan)
+
+	return out, nil
+}
+
 func (g *GameFactory) ListEnrolled() ([]*model.HellMan, error) {
 	return g.storage.ListEnrolled()
 }
