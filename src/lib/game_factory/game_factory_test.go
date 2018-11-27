@@ -56,16 +56,13 @@ func getPairFor(man string, list []string) (string, []string) {
 
 func shuffle(list []string) []string {
 	l := len(list)
-	entropy := 3
+	entropy := 1
 
-	rnd, err := random.IntInit(l*entropy, 0, l-1)
-	if err != nil {
-		return list
-	}
+	rnd := random.New()
 
 	for k := 0; k < entropy; k++ {
 		for i := 0; i < l; i++ {
-			rndI := rnd.Get()
+			rndI := rnd.Intn(l - 1)
 
 			t := list[i]
 			list[i] = list[rndI]

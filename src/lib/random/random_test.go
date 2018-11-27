@@ -1,16 +1,30 @@
 package random
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
-func TestIntInit(t *testing.T) {
-	intRndPool, err := IntInit(10, 0, 9)
+func TestGetRandomBytes(t *testing.T) {
+	rBytes, err := GetRandomBytes(16)
 	if err != nil {
 		t.Error(err.Error())
 
 		return
 	}
 
-	for i := 0; i < 10; i++ {
-		t.Log(intRndPool.Get())
+	for _, chunkBytes := range rBytes {
+		for _, b := range chunkBytes {
+			fmt.Printf("%x ", b)
+		}
+		fmt.Printf("\n")
+	}
+}
+
+func TestNew(t *testing.T) {
+	r := New()
+
+	for i := 0; i < 3; i++ {
+		t.Log(r.Intn(10))
 	}
 }
