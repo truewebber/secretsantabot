@@ -21,10 +21,26 @@ func TestGetRandomBytes(t *testing.T) {
 	}
 }
 
-func TestNew(t *testing.T) {
+func TestNewDefault(t *testing.T) {
 	r := New()
 
-	for i := 0; i < 3; i++ {
-		t.Log(r.Intn(10))
+	for i := 0; i < 30; i++ {
+		t.Log(r.Intn(1000))
+	}
+}
+
+func TestNewNative(t *testing.T) {
+	r := New(WithNative())
+
+	for i := 0; i < 30; i++ {
+		t.Log(r.Intn(1000))
+	}
+}
+
+func TestNewRandomORG(t *testing.T) {
+	r := New(WithRandomORG())
+
+	for i := 0; i < 30; i++ {
+		t.Log(r.Intn(1000))
 	}
 }

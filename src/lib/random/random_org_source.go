@@ -2,6 +2,7 @@ package random
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"io/ioutil"
 	"net/http"
@@ -10,6 +11,46 @@ import (
 
 	"github.com/pkg/errors"
 )
+
+type (
+	SourceRandomORG struct {
+		bytes [][]byte
+	}
+)
+
+const (
+	GetDefaultBytesNum = 128
+)
+
+func NewSourceRandomORG() *SourceRandomORG {
+	out := &SourceRandomORG{}
+	out.Seed(0)
+
+	return out
+}
+
+func (c *SourceRandomORG) Int63() int64 {
+	if len(c.bytes) == 0 {
+		c.Seed(0)
+	}
+
+	var b []byte
+	b, c.bytes = c.bytes[0], c.bytes[1:]
+
+	// mask off sign bit to ensure positive number
+	return int64(binary.LittleEndian.Uint64(b) & (1<<63 - 1))
+}
+
+func (c *SourceRandomORG) Seed(_ int64) {
+	randomBytes, err := GetRandomBytes(GetDefaultBytesNum)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	c.bytes = randomBytes
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 func GetRandomBytes(num int) ([][]byte, error) {
 	intUrl := getUrl("/cgi-bin/randbyte")
@@ -71,8 +112,6 @@ func GetRandomBytes(num int) ([][]byte, error) {
 
 	return out, nil
 }
-
-// ---------------------------------------------------------------------------------------------------------------------
 
 func getUrl(path string) url.URL {
 	return url.URL{
