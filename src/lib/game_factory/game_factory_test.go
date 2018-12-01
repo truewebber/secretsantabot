@@ -3,72 +3,111 @@ package game_factory
 import (
 	"testing"
 
-	"lib/random"
+	"lib/model"
+	"lib/storage"
 )
 
-func TestGameFactory_Magic(t *testing.T) {
-	list := []string{
-		"Артем",
-		"Aня",
-		"Леша",
-		"Коля",
-		"Настя",
-		"Дима",
-		"Стася",
-		"Илья",
+var (
+	list = map[int]*model.HellMan{
+		10: {FirstName: "Артем"},
+		11: {FirstName: "Aня"},
+		12: {FirstName: "Леша"},
+		13: {FirstName: "Коля"},
+		14: {FirstName: "Настя"},
+		15: {FirstName: "Дима"},
+		16: {FirstName: "Стася"},
+		17: {FirstName: "Илья"},
 	}
+)
 
-	l := len(list)
+func TestGameFactory_MagicDeny(t *testing.T) {
+	gFactory := New(nil)
+	mapList := list
+	var out map[*model.HellMan]*model.HellMan
 
-	shuffled := make([]string, l)
-	copy(shuffled, list)
+	var noResultErr error
+	for i := 0; i <= Retries; i++ {
+		out = make(map[*model.HellMan]*model.HellMan)
 
-	for _, man := range list {
-		var pair string
-		pair, shuffled = getPairFor(man, shuffled)
-
-		t.Log(man, pair)
-	}
-}
-
-func getPairFor(man string, list []string) (string, []string) {
-	var elem string
-	for len(elem) == 0 {
-		if len(list) != 1 {
-			list = shuffle(list)
+		idList := make([]int, 0)
+		for id := range mapList {
+			idList = append(idList, id)
 		}
 
-		if man == list[0] {
-			continue
-		}
+		shuffled := make([]int, len(idList))
+		copy(shuffled, idList)
 
-		if man == "Артем" {
-			if list[0] == "Аня" {
-				continue
+		var fuckError error
+		for _, id := range idList {
+			var (
+				pairId int
+				err    error
+			)
+			pairId, shuffled, err = gFactory.GetPairFor(id, shuffled)
+			if err != nil {
+				fuckError = err
+
+				break
 			}
+
+			out[mapList[id]] = mapList[pairId]
 		}
 
-		elem, list = list[0], list[1:]
+		if fuckError == nil {
+			noResultErr = nil
+
+			break
+		} else {
+			noResultErr = fuckError
+		}
+	}
+	if noResultErr != nil {
+		t.Error(noResultErr.Error())
+
+		return
 	}
 
-	return elem, list
+	for hellSanta, hellMan := range out {
+		t.Log(hellSanta.FirstName, hellMan.FirstName)
+	}
 }
 
-func shuffle(list []string) []string {
-	l := len(list)
-	entropy := 1
+func TestGameFactory_Magic(t *testing.T) {
+	strg, err := storage.NewRedisStorage()
+	if err != nil {
+		t.Error(err.Error())
 
-	rnd := random.New()
+		return
+	}
+	gFactory := New(strg)
 
-	for k := 0; k < entropy; k++ {
-		for i := 0; i < l; i++ {
-			rndI := rnd.Intn(l - 1)
+	result, err := gFactory.Magic()
+	if err != nil {
+		t.Error(err.Error())
 
-			t := list[i]
-			list[i] = list[rndI]
-			list[rndI] = t
-		}
+		return
 	}
 
-	return list
+	for hellSanta, hellMan := range result {
+		t.Log(hellSanta.FirstName, hellMan.FirstName)
+	}
+}
+
+func TestShuffle(t *testing.T) {
+	idList := make([]int, 0)
+	for id := range list {
+		idList = append(idList, id)
+	}
+
+	t.Log("REGULAR")
+	for _, man := range idList {
+		t.Log(man)
+	}
+
+	shuffle(idList)
+
+	t.Log("SHUFFLED")
+	for _, man := range idList {
+		t.Log(man)
+	}
 }

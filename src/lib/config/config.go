@@ -30,11 +30,10 @@ const (
 )
 
 var (
-	ENV           = ""
-	configPath    = ""
-	OptConfigPath = "~/"
-	configCache   = make(map[string]*Config)
-	envCache      = make(map[string]string)
+	ENV         = ""
+	configPath  = ""
+	configCache = make(map[string]*Config)
+	envCache    = make(map[string]string)
 )
 
 func init() {
@@ -77,7 +76,6 @@ func NewConfig(envName string) *Config {
 	}
 
 	v.AddConfigPath(".")
-	v.AddConfigPath(OptConfigPath)
 	v.SetConfigType(DefaultFormat)
 
 	err := v.ReadInConfig()

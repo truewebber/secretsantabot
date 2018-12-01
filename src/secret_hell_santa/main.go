@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -15,8 +14,12 @@ import (
 	"lib/storage"
 )
 
+var (
+	conf = config.Get()
+)
+
 func main() {
-	bot, err := tgbotapi.NewBotAPI(config.GetEnvParam("TOKEN"))
+	bot, err := tgbotapi.NewBotAPI(conf.GetString("token"))
 	if err != nil {
 		log.Error("Error create new bot", "error", err.Error())
 
@@ -180,12 +183,12 @@ func main() {
 }
 
 func lockedWithChat(chatId int64) bool {
-	lockChatId := config.GetEnvParam("LOCK_CHAT")
-	if lockChatId == "" {
+	lockChatId := conf.GetInt64("lock-on-chat-id")
+	if lockChatId == 0 {
 		return false
 	}
 
-	if strconv.FormatInt(chatId, 10) == lockChatId {
+	if chatId == lockChatId {
 		return false
 	}
 
@@ -193,28 +196,14 @@ func lockedWithChat(chatId int64) bool {
 }
 
 func lockedWithUser(userId int) bool {
-	lockUserId := config.GetEnvParam("LOCK_USER")
-	if lockUserId == "" {
+	lockUserId := conf.GetInt("admin-user-id")
+	if lockUserId == 0 {
 		return false
 	}
 
-	if strconv.Itoa(userId) == lockUserId {
+	if userId == lockUserId {
 		return false
 	}
 
 	return true
 }
-
-//member, err := bot.GetChatMember(tgbotapi.ChatConfigWithUser{
-//	ChatID: msg.Chat.ID,
-//	UserID: msg.From.ID,
-//})
-//if err != nil {
-//	log.Error("Error get user", "user-id", msg.From.ID, "error", err.Error())
-//
-//	continue
-//}
-//
-//user := member.User
-//
-//log.Debug("UserById", "name", fmt.Sprintf("%s %s", user.FirstName, user.LastName))

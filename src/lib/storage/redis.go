@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-redis/redis"
 
+	"lib/config"
 	"lib/model"
 )
 
@@ -22,8 +23,8 @@ const (
 
 func NewRedisStorage() (*RedisStorage, error) {
 	rc := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-		DB:   10,
+		Addr: config.Get().GetString("redis.addr"),
+		DB:   config.Get().GetInt("redis.db"),
 	})
 
 	if cmd := rc.Ping(); cmd.Err() != nil {
@@ -35,13 +36,13 @@ func NewRedisStorage() (*RedisStorage, error) {
 	}, nil
 }
 
-func (r *RedisStorage) ListEnrolled() ([]*model.HellMan, error) {
+func (r *RedisStorage) ListEnrolled() (map[int]*model.HellMan, error) {
 	cmd := r.client.HGetAll(GameKey)
 	if cmd.Err() != nil {
 		return nil, cmd.Err()
 	}
 
-	out := make([]*model.HellMan, 0)
+	out := make(map[int]*model.HellMan)
 	for _, value := range cmd.Val() {
 		obj := new(model.HellMan)
 
@@ -50,7 +51,7 @@ func (r *RedisStorage) ListEnrolled() ([]*model.HellMan, error) {
 			return nil, cmd.Err()
 		}
 
-		out = append(out, obj)
+		out[obj.TelegramId] = obj
 	}
 
 	return out, nil

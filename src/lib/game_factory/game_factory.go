@@ -3,13 +3,16 @@ package game_factory
 import (
 	"github.com/pkg/errors"
 
+	"lib/config"
 	"lib/model"
+	"lib/random"
 	"lib/storage"
 )
 
 type (
 	GameFactory struct {
 		storage *storage.RedisStorage
+		deny    map[int]int
 	}
 )
 
@@ -18,25 +21,98 @@ var (
 	ErrorMagicWasAlreadyDone = errors.New("Magic was already done")
 )
 
-func New(strg *storage.RedisStorage) *GameFactory {
-	return &GameFactory{
-		storage: strg,
+const (
+	DefaultEntropy = 3
+	Retries        = 10000
+)
+
+func New(storageInstance *storage.RedisStorage) *GameFactory {
+	out := &GameFactory{
+		storage: storageInstance,
+		deny:    make(map[int]int),
 	}
+
+	deny := make(map[int]int)
+	err := config.Get().UnmarshalKey("rules.deny", &deny)
+	if err == nil {
+		out.deny = deny
+	}
+
+	return out
 }
 
 func (g *GameFactory) Magic() (map[*model.HellMan]*model.HellMan, error) {
-	//list, err := g.storage.ListEnrolled()
-	//if err != nil {
-	//	return nil, err
-	//}
+	isMagicDone, err := g.storage.IsMagicDone()
+	if err != nil {
+		return nil, err
+	}
 
-	out := make(map[*model.HellMan]*model.HellMan)
+	if isMagicDone {
+		return nil, ErrorMagicWasAlreadyDone
+	}
+
+	mapList, err := g.storage.ListEnrolled()
+	if err != nil {
+		return nil, err
+	}
+
+	var out map[*model.HellMan]*model.HellMan
+
+	var noResultErr error
+	for i := 0; i <= Retries; i++ {
+		out = make(map[*model.HellMan]*model.HellMan)
+
+		idList := make([]int, 0)
+		for id := range mapList {
+			idList = append(idList, id)
+		}
+
+		shuffled := make([]int, len(idList))
+		copy(shuffled, idList)
+
+		var fuckError error
+		for _, id := range idList {
+			var (
+				pairId int
+				err    error
+			)
+			pairId, shuffled, err = g.GetPairFor(id, shuffled)
+			if err != nil {
+				fuckError = err
+
+				break
+			}
+
+			out[mapList[id]] = mapList[pairId]
+		}
+
+		if fuckError == nil {
+			noResultErr = nil
+
+			break
+		} else {
+			noResultErr = fuckError
+		}
+	}
+	if noResultErr != nil {
+		return nil, noResultErr
+	}
 
 	return out, nil
 }
 
 func (g *GameFactory) ListEnrolled() ([]*model.HellMan, error) {
-	return g.storage.ListEnrolled()
+	mapList, err := g.storage.ListEnrolled()
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]*model.HellMan, 0)
+	for _, hellMan := range mapList {
+		out = append(out, hellMan)
+	}
+
+	return out, nil
 }
 
 func (g *GameFactory) Enroll(user *model.HellMan) error {
@@ -81,4 +157,54 @@ func (g *GameFactory) DropEnroll(user *model.HellMan) error {
 	}
 
 	return g.storage.DropEnroll(user)
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+func (g *GameFactory) GetPairFor(man int, list []int) (int, []int, error) {
+	noResults := 0
+
+	var elem int
+	for elem == 0 {
+		if noResults > 10 {
+			return 0, nil, errors.New("FUCK IT")
+		}
+
+		if len(list) != 1 {
+			shuffle(list)
+		}
+
+		if man == list[0] {
+			noResults++
+
+			continue
+		}
+
+		if denyMan, ok := g.deny[man]; ok {
+			if denyMan == list[0] {
+				noResults++
+
+				continue
+			}
+		}
+
+		elem, list = list[0], list[1:]
+	}
+
+	return elem, list, nil
+}
+
+func shuffle(list []int) {
+	l := len(list)
+	rnd := random.New()
+
+	for e := 0; e < DefaultEntropy; e++ {
+		for i := 0; i < l; i++ {
+			rndI := rnd.Intn(l - 1)
+
+			t := list[i]
+			list[i] = list[rndI]
+			list[rndI] = t
+		}
+	}
 }
