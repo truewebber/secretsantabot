@@ -166,6 +166,26 @@ func main() {
 
 					continue
 				}
+
+				result, err := gameFactory.Magic()
+				if err != nil && err != game_factory.ErrorMagicWasAlreadyDone {
+					log.Error("Error MAGIC", "error", err.Error())
+
+					continue
+				} else if err == game_factory.ErrorMagicWasAlreadyDone {
+					replyMsg := tgbotapi.NewMessage(msg.Chat.ID, "One magic was already done.")
+					bot.Send(replyMsg)
+
+					continue
+				}
+
+				text := "TEST RESULTS:\n\n"
+				for santa, man := range result {
+					text += fmt.Sprintf("%s to %s\n", santa.FirstName, man.FirstName)
+				}
+
+				replyMsg := tgbotapi.NewMessage(msg.Chat.ID, text)
+				bot.Send(replyMsg)
 			}
 		case "/help":
 			{
