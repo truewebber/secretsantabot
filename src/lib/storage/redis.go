@@ -36,6 +36,57 @@ func NewRedisStorage() (*RedisStorage, error) {
 	}, nil
 }
 
+func (r *RedisStorage) SaveMagic(save map[*model.HellMan]*model.HellMan) error {
+	for santa, man := range save {
+		cmd := r.client.HSet(MagicKey, strconv.Itoa(santa.TelegramId), man.TelegramId)
+		if cmd.Err() != nil {
+			r.DropMagic()
+
+			return cmd.Err()
+		}
+	}
+
+	return nil
+}
+
+func (r *RedisStorage) DropMagic() error {
+	cmd := r.client.Del(MagicKey)
+	if cmd.Err() != nil {
+		return cmd.Err()
+	}
+
+	return nil
+}
+
+func (r *RedisStorage) ListMagic() (map[int]*model.HellMan, error) {
+	cmd := r.client.HGetAll(MagicKey)
+	if cmd.Err() != nil {
+		return nil, cmd.Err()
+	}
+
+	list, err := r.ListEnrolled()
+	if cmd.Err() != nil {
+		return nil, err
+	}
+
+	out := make(map[int]*model.HellMan)
+	for santaIdStr, manIdStr := range cmd.Val() {
+		santaId, err := strconv.Atoi(santaIdStr)
+		if err != nil {
+			return nil, err
+		}
+
+		manId, err := strconv.Atoi(manIdStr)
+		if err != nil {
+			return nil, err
+		}
+
+		out[santaId] = list[manId]
+	}
+
+	return out, nil
+}
+
 func (r *RedisStorage) ListEnrolled() (map[int]*model.HellMan, error) {
 	cmd := r.client.HGetAll(GameKey)
 	if cmd.Err() != nil {
@@ -69,6 +120,17 @@ func (r *RedisStorage) Enroll(user *model.HellMan) error {
 	return nil
 }
 
+func (r *RedisStorage) DropEnroll(user *model.HellMan) error {
+	key := strconv.Itoa(user.TelegramId)
+
+	cmd := r.client.HDel(GameKey, key)
+	if cmd.Err() != nil && cmd.Err() != redis.Nil {
+		return cmd.Err()
+	}
+
+	return nil
+}
+
 func (r *RedisStorage) IsEnroll(user *model.HellMan) (bool, error) {
 	key := strconv.Itoa(user.TelegramId)
 
@@ -80,17 +142,6 @@ func (r *RedisStorage) IsEnroll(user *model.HellMan) (bool, error) {
 	}
 
 	return true, nil
-}
-
-func (r *RedisStorage) DropEnroll(user *model.HellMan) error {
-	key := strconv.Itoa(user.TelegramId)
-
-	cmd := r.client.HDel(GameKey, key)
-	if cmd.Err() != nil && cmd.Err() != redis.Nil {
-		return cmd.Err()
-	}
-
-	return nil
 }
 
 func (r *RedisStorage) IsMagicDone() (bool, error) {

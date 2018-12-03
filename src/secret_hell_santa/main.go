@@ -18,7 +18,22 @@ var (
 	conf = config.Get()
 )
 
+const (
+	EnrollCommand = "enroll"
+	EndCommand    = "end"
+	ListCommand   = "list"
+	MagicCommand  = "magic"
+	MyCommand     = "my"
+	HelpCommand   = "help"
+)
+
 func main() {
+	if conf.GetInt64("lock-on-chat-id") == 0 {
+		log.Error("lock-on-chat-id is required param")
+
+		return
+	}
+
 	bot, err := tgbotapi.NewBotAPI(conf.GetString("token"))
 	if err != nil {
 		log.Error("Error create new bot", "error", err.Error())
@@ -56,20 +71,20 @@ func main() {
 
 		msg := u.Message
 
+		log.Debug("MSG", "chat-id", msg.Chat.ID, "chat", msg.Chat.Title,
+			"user-id", msg.From.ID, "user", msg.From.UserName, "_", msg.Text)
+
+		command := getCommand(msg.Text)
+
 		//lock to chat
-		if lockedWithChat(msg.Chat.ID) {
+		if lockedWithChat(msg.Chat.ID) && command != MyCommand {
 			log.Error("NOT TRUST CHAT", "chat-id", msg.Chat.ID, "chat", msg.Chat.Title)
 
 			continue
 		}
 
-		log.Debug("MSG", "chat-id", msg.Chat.ID, "chat", msg.Chat.Title,
-			"user-id", msg.From.ID, "user", msg.From.UserName, "_", msg.Text)
-
-		cmdText := strings.TrimSuffix(msg.Text, fmt.Sprintf("@%s", model.TGBotName))
-
-		switch cmdText {
-		case "/start":
+		switch command {
+		case EnrollCommand:
 			{
 				log.Debug("Enroll", "_", fmt.Sprintf("%s %s", msg.From.FirstName, msg.From.LastName))
 
@@ -101,7 +116,7 @@ func main() {
 				replyMsg := tgbotapi.NewMessage(msg.Chat.ID, text)
 				bot.Send(replyMsg)
 			}
-		case "/end":
+		case EndCommand:
 			{
 				log.Debug("End Enroll", "_", fmt.Sprintf("%s %s", msg.From.FirstName, msg.From.LastName))
 
@@ -133,8 +148,10 @@ func main() {
 				replyMsg := tgbotapi.NewMessage(msg.Chat.ID, text)
 				bot.Send(replyMsg)
 			}
-		case "/list":
+		case ListCommand:
 			{
+				log.Debug("List", "_", fmt.Sprintf("%s %s", msg.From.FirstName, msg.From.LastName))
+
 				list, err := gameFactory.ListEnrolled()
 				if err != nil {
 					log.Error("Error list enrolled", "error", err.Error())
@@ -156,8 +173,10 @@ func main() {
 				replyMsg := tgbotapi.NewMessage(msg.Chat.ID, text)
 				bot.Send(replyMsg)
 			}
-		case "/magic":
+		case MagicCommand:
 			{
+				log.Debug("Magic", "_", fmt.Sprintf("%s %s", msg.From.FirstName, msg.From.LastName))
+
 				if lockedWithUser(msg.From.ID) {
 					log.Error("NOT ADMIN REQUEST", "user-id", msg.From.ID, "user", msg.From.UserName)
 
@@ -179,20 +198,70 @@ func main() {
 					continue
 				}
 
-				text := "TEST RESULTS:\n\n"
-				for santa, man := range result {
-					text += fmt.Sprintf("%s to %s\n", santa.FirstName, man.FirstName)
+				text := "Magic done.\n" +
+					"In case you didn't receive message from me, write strait to me."
+
+				replyMsg := tgbotapi.NewMessage(conf.GetInt64("lock-on-chat-id"), text)
+				_, err = bot.Send(replyMsg)
+				if err != nil {
+					log.Error("Error send message", "_", err.Error())
 				}
 
+				for santa, man := range result {
+					text = fmt.Sprintf("Hi! Your target is `%s %s`.", man.FirstName, man.LastName)
+
+					replyMsg := tgbotapi.NewMessage(int64(santa.TelegramId), text)
+					_, err = bot.Send(replyMsg)
+					if err != nil {
+						log.Error("Error send magic private message", "_", err.Error())
+					}
+				}
+			}
+		case MyCommand:
+			{
+				log.Debug("My", "_", fmt.Sprintf("%s %s", msg.From.FirstName, msg.From.LastName))
+				if msg.Chat.ID != int64(msg.From.ID) {
+					replyMsg := tgbotapi.NewMessage(msg.Chat.ID, "Please text me in private chat.")
+					replyMsg.ReplyToMessageID = msg.MessageID
+					bot.Send(replyMsg)
+
+					continue
+				}
+
+				man, err := gameFactory.GetMyMagic(&model.HellMan{
+					TelegramId: msg.From.ID,
+					Username:   msg.From.UserName,
+					FirstName:  msg.From.FirstName,
+					LastName:   msg.From.LastName,
+					EnrollAt:   time.Now(),
+				})
+				if err != nil && err != game_factory.ErrorMagicIsNotProceed && err != game_factory.ErrorYouAreNotInThisGame {
+					log.Error("Error get santa's man", "error", err.Error())
+
+					continue
+				} else if err == game_factory.ErrorMagicIsNotProceed {
+					replyMsg := tgbotapi.NewMessage(msg.Chat.ID, "Wait until magic will be done.")
+					bot.Send(replyMsg)
+
+					continue
+				} else if err == game_factory.ErrorYouAreNotInThisGame {
+					replyMsg := tgbotapi.NewMessage(msg.Chat.ID, "Sorry, you are not in this game.")
+					bot.Send(replyMsg)
+
+					continue
+				}
+
+				text := fmt.Sprintf("Hey! Your target is `%s %s`", man.FirstName, man.LastName)
 				replyMsg := tgbotapi.NewMessage(msg.Chat.ID, text)
 				bot.Send(replyMsg)
 			}
-		case "/help":
+		case HelpCommand:
 			{
-				text := "/start - enroll the game\n" +
+				text := "/enroll - enroll the game\n" +
 					"/end - stop your enroll (only before magic starts)\n" +
-					"/magic - start the game (only admin)\n" +
 					"/list - list all enrolling people\n" +
+					"/magic - start the game (only admin)\n" +
+					"/my - SecretHelSanta will resend magic info for you (only in private chat wi me)\n" +
 					"/help - show this message\n"
 
 				replyMsg := tgbotapi.NewMessage(msg.Chat.ID, text)
@@ -201,6 +270,17 @@ func main() {
 		}
 	}
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+func getCommand(text string) string {
+	text = strings.TrimSuffix(text, fmt.Sprintf("@%s", model.TGBotName))
+	text = strings.Trim(text, "/")
+
+	return text
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 func lockedWithChat(chatId int64) bool {
 	lockChatId := conf.GetInt64("lock-on-chat-id")

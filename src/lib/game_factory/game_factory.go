@@ -19,6 +19,8 @@ type (
 var (
 	ErrorAlreadyEnroll       = errors.New("Already enroll")
 	ErrorMagicWasAlreadyDone = errors.New("Magic was already done")
+	ErrorMagicIsNotProceed   = errors.New("Magic is not proceed for now")
+	ErrorYouAreNotInThisGame = errors.New("You are not in this game")
 )
 
 const (
@@ -39,6 +41,28 @@ func New(storageInstance *storage.RedisStorage) *GameFactory {
 	}
 
 	return out
+}
+
+func (g *GameFactory) GetMyMagic(santa *model.HellMan) (*model.HellMan, error) {
+	isMagicDone, err := g.storage.IsMagicDone()
+	if err != nil {
+		return nil, err
+	}
+
+	if !isMagicDone {
+		return nil, ErrorMagicIsNotProceed
+	}
+
+	santaManMap, err := g.storage.ListMagic()
+	if err != nil {
+		return nil, err
+	}
+
+	if man, ok := santaManMap[santa.TelegramId]; ok {
+		return man, nil
+	}
+
+	return nil, ErrorYouAreNotInThisGame
 }
 
 func (g *GameFactory) Magic() (map[*model.HellMan]*model.HellMan, error) {
@@ -96,6 +120,11 @@ func (g *GameFactory) Magic() (map[*model.HellMan]*model.HellMan, error) {
 	}
 	if noResultErr != nil {
 		return nil, noResultErr
+	}
+
+	err = g.storage.SaveMagic(out)
+	if err != nil {
+		return nil, err
 	}
 
 	return out, nil
