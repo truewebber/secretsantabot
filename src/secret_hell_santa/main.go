@@ -160,14 +160,18 @@ func main() {
 				}
 
 				text := ""
-				for i, u := range list {
-					text += fmt.Sprintf("%s %s", u.FirstName, u.LastName)
-					if u.Username != "" {
-						text += fmt.Sprintf(" (@%s)", u.Username)
+				if len(list) != 0 {
+					for i, u := range list {
+						text += fmt.Sprintf("%s %s", u.FirstName, u.LastName)
+						if u.Username != "" {
+							text += fmt.Sprintf(" (@%s)", u.Username)
+						}
+						if i != len(list)-1 {
+							text += "\n"
+						}
 					}
-					if i != len(list)-1 {
-						text += "\n"
-					}
+				} else {
+					text = "List is empty..."
 				}
 
 				replyMsg := tgbotapi.NewMessage(msg.Chat.ID, text)
@@ -187,7 +191,7 @@ func main() {
 				}
 
 				result, err := gameFactory.Magic()
-				if err != nil && err != game_factory.ErrorMagicWasAlreadyDone {
+				if err != nil && err != game_factory.ErrorMagicWasAlreadyDone && err != game_factory.ErrorNotEnough {
 					log.Error("Error MAGIC", "error", err.Error())
 
 					continue
@@ -196,19 +200,15 @@ func main() {
 					bot.Send(replyMsg)
 
 					continue
-				}
+				} else if err == game_factory.ErrorNotEnough {
+					replyMsg := tgbotapi.NewMessage(msg.Chat.ID, "Not enough users enrolled to start game.")
+					bot.Send(replyMsg)
 
-				text := "Magic done.\n" +
-					"In case you didn't receive message from me, write strait to me."
-
-				replyMsg := tgbotapi.NewMessage(conf.GetInt64("lock-on-chat-id"), text)
-				_, err = bot.Send(replyMsg)
-				if err != nil {
-					log.Error("Error send message", "_", err.Error())
+					continue
 				}
 
 				for santa, man := range result {
-					text = fmt.Sprintf("Hi! Your target is `%s %s`.", man.FirstName, man.LastName)
+					text := fmt.Sprintf("Hi! Your target is `%s %s`.", man.FirstName, man.LastName)
 
 					replyMsg := tgbotapi.NewMessage(int64(santa.TelegramId), text)
 					_, err = bot.Send(replyMsg)
@@ -216,6 +216,17 @@ func main() {
 						log.Error("Error send magic private message", "_", err.Error())
 					}
 				}
+
+				text := "Magic done.\n\n" +
+					"In case you didn't receive message from me, write strait to me.\n" +
+					"Press on my name and press start on the bottom of window, then send me `/my` command."
+
+				replyMsg := tgbotapi.NewMessage(conf.GetInt64("lock-on-chat-id"), text)
+				_, err = bot.Send(replyMsg)
+				if err != nil {
+					log.Error("Error send message", "_", err.Error())
+				}
+
 			}
 		case MyCommand:
 			{

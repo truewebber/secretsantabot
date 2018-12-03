@@ -21,6 +21,7 @@ var (
 	ErrorMagicWasAlreadyDone = errors.New("Magic was already done")
 	ErrorMagicIsNotProceed   = errors.New("Magic is not proceed for now")
 	ErrorYouAreNotInThisGame = errors.New("You are not in this game")
+	ErrorNotEnough           = errors.New("Not enough users enrolled to start game")
 )
 
 const (
@@ -78,6 +79,10 @@ func (g *GameFactory) Magic() (map[*model.HellMan]*model.HellMan, error) {
 	mapList, err := g.storage.ListEnrolled()
 	if err != nil {
 		return nil, err
+	}
+
+	if len(mapList) < 2 {
+		return nil, ErrorNotEnough
 	}
 
 	var out map[*model.HellMan]*model.HellMan
