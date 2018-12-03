@@ -15,7 +15,8 @@ import (
 )
 
 var (
-	conf = config.Get()
+	conf     = config.Get()
+	selfName string
 )
 
 const (
@@ -42,6 +43,7 @@ func main() {
 	}
 
 	log.Debug("Authorized", "_", bot.Self.UserName)
+	selfName = bot.Self.UserName
 
 	u := tgbotapi.NewUpdate(20)
 	u.Timeout = 5
@@ -285,7 +287,7 @@ func main() {
 // ---------------------------------------------------------------------------------------------------------------------
 
 func getCommand(text string) string {
-	text = strings.TrimSuffix(text, fmt.Sprintf("@%s", model.TGBotName))
+	text = strings.TrimSuffix(text, fmt.Sprintf("@%s", selfName))
 	text = strings.Trim(text, "/")
 
 	return text
