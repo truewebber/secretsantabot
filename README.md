@@ -1,7 +1,7 @@
 Telegram Secret Santa bot
 -------------------------
 
-#####Start bot
+**Start bot**
 ```bash
 ENV=prod LOGXI=* ./secret_hell_santa
 ```
@@ -11,7 +11,7 @@ Config name it's ENV.yaml. Default ENV=dev
 
 ***
 
-#####Commands
+**Commands**
 ```
 /enroll - enroll the game
 /end - stop your enroll (only before magic starts)
@@ -23,7 +23,7 @@ Config name it's ENV.yaml. Default ENV=dev
 
 ***
 
-#####Config example
+**Config example**
 ```yaml
 token: 0000000:AAAAAAAAAAAAAAAAAAAAAAAAA
 lock-on-chat-id: 0000000
