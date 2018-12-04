@@ -186,7 +186,7 @@ func main() {
 				if lockedWithUser(msg.From.ID) {
 					log.Error("NOT ADMIN REQUEST", "user-id", msg.From.ID, "user", msg.From.UserName)
 
-					replyMsg := tgbotapi.NewMessage(msg.Chat.ID, "I feel your fear! Don't disturb me any more!")
+					replyMsg := tgbotapi.NewMessage(msg.Chat.ID, "I sense great fear in you! Don't disturb me any more!")
 					bot.Send(replyMsg)
 
 					continue
