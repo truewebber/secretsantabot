@@ -2,7 +2,8 @@ FROM golang:1.17-alpine as builder
 
 WORKDIR /app
 
-COPY src .
+COPY cmd internal go.mod go.sum ./
+
 RUN go build -o ./bin/secretsantabot ./cmd/secretsantabot/main.go
 RUN go install github.com/golang-migrate/migrate/v4
 
