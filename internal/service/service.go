@@ -5,9 +5,16 @@ import (
 	"github.com/truewebber/secretsantabot/internal/log"
 )
 
-type Config struct {
-	Logger log.Logger
-}
+type (
+	Config struct {
+		Logger      log.Logger
+		ChatService ChatService
+	}
+
+	ChatService struct {
+		RedisURI string
+	}
+)
 
 func NewConfig(logger log.Logger) *Config {
 	return &Config{
@@ -15,8 +22,8 @@ func NewConfig(logger log.Logger) *Config {
 	}
 }
 
-func MustNewApplication(cfg *Config) app.Application {
-	return app.Application{
+func MustNewApplication(cfg *Config) *app.Application {
+	return &app.Application{
 		Commands: app.Commands{},
 		Queries:  app.Queries{},
 	}

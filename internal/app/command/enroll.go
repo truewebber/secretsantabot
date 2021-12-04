@@ -6,8 +6,7 @@ import (
 )
 
 type (
-	EnrollHandler struct {
-	}
+	EnrollHandler struct{}
 )
 
 func NewEnrollHandler(logger log.Logger) (*EnrollHandler, error) {

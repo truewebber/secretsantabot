@@ -1,9 +1,0 @@
-token: 0000000:AAAAAAAAAAAAAAAAAAAAAAAAA
-lock-on-chat-id: 0000000
-admin-user-id: 0000000
-
-rules:
-  deny:
-    1212: 2
-    2323: 4
-    -933: 6

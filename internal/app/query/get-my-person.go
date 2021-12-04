@@ -6,8 +6,7 @@ import (
 )
 
 type (
-	GetMyPersonHandler struct {
-	}
+	GetMyPersonHandler struct{}
 )
 
 func NewGetMyPersonHandler(logger log.Logger) (*GetMyPersonHandler, error) {
@@ -28,5 +27,5 @@ func MustNewGetMyPersonHandler(logger log.Logger) *GetMyPersonHandler {
 }
 
 func (h *GetMyPersonHandler) Handle() (*types.Person, error) {
-	return nil, nil
+	return &types.Person{}, nil
 }

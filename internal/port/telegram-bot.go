@@ -6,28 +6,31 @@ import (
 
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 
+	"github.com/truewebber/secretsantabot/internal/app"
 	"github.com/truewebber/secretsantabot/internal/log"
 )
 
 type TelegramBot struct {
-	bot    *tgbotapi.BotAPI
-	logger log.Logger
+	bot         *tgbotapi.BotAPI
+	application *app.Application
+	logger      log.Logger
 }
 
-func NewTelegram(token string, logger log.Logger) (*TelegramBot, error) {
+func NewTelegramBot(token string, application *app.Application, logger log.Logger) (*TelegramBot, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, fmt.Errorf("create bot api: %w", err)
 	}
 
 	return &TelegramBot{
-		bot:    bot,
-		logger: logger,
+		bot:         bot,
+		application: application,
+		logger:      logger,
 	}, nil
 }
 
-func MustNewTelegram(token string, logger log.Logger) *TelegramBot {
-	t, err := NewTelegram(token, logger)
+func MustNewTelegramBot(token string, application *app.Application, logger log.Logger) *TelegramBot {
+	t, err := NewTelegramBot(token, application, logger)
 	if err != nil {
 		panic(err)
 	}
@@ -36,8 +39,13 @@ func MustNewTelegram(token string, logger log.Logger) *TelegramBot {
 }
 
 func (t *TelegramBot) Run(ctx context.Context) error {
-	u := tgbotapi.NewUpdate(20)
-	u.Timeout = 5
+	const (
+		numberOfUpdates = 20
+		updatesTimeout  = 5
+	)
+
+	u := tgbotapi.NewUpdate(numberOfUpdates)
+	u.Timeout = updatesTimeout
 
 	updates, err := t.bot.GetUpdatesChan(u)
 	if err != nil {
@@ -59,12 +67,12 @@ func (t *TelegramBot) processUpdates(ctx context.Context, updates tgbotapi.Updat
 				return
 			}
 
-			t.processOneUpdate(u)
+			t.processOneUpdate(&u)
 		}
 	}
 }
 
-func (t *TelegramBot) processOneUpdate(update tgbotapi.Update) {
+func (t *TelegramBot) processOneUpdate(update *tgbotapi.Update) {
 	command := update.Message.Command()
 	if command == "" {
 		return
@@ -124,7 +132,11 @@ const helpText = "/enroll - enroll the game\n" +
 func (t *TelegramBot) Help(msg *tgbotapi.Message) {
 	replyMsg := tgbotapi.NewMessage(msg.Chat.ID, helpText)
 
-	if _, err := t.bot.Send(replyMsg); err != nil {
-		t.logger.Errorf("")
+	t.SendAndLogOnError(&replyMsg)
+}
+
+func (t *TelegramBot) SendAndLogOnError(msg *tgbotapi.MessageConfig) {
+	if _, err := t.bot.Send(msg); err != nil {
+		t.logger.Errorf("send message: %w", err)
 	}
 }

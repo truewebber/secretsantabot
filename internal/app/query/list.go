@@ -6,8 +6,7 @@ import (
 )
 
 type (
-	ListHandler struct {
-	}
+	ListHandler struct{}
 )
 
 func NewListHandler(logger log.Logger) (*ListHandler, error) {

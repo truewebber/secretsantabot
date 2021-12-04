@@ -6,8 +6,7 @@ import (
 )
 
 type (
-	MagicHandler struct {
-	}
+	MagicHandler struct{}
 )
 
 func NewMagicHandler(logger log.Logger) (*MagicHandler, error) {

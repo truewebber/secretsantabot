@@ -2,9 +2,4 @@
 .DS_Store
 
 bin/
-pkg/
 run.sh
-!vendor/src/github.com/pkg
-
-dev.yaml
-prod.yaml

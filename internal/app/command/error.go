@@ -1,7 +1,5 @@
 package command
 
-import (
-	"errors"
-)
+import "errors"
 
 var errServiceIsNil = errors.New("service is nil")

@@ -61,7 +61,7 @@ func (z *ZapWrapper) Errorf(msg string, args ...interface{}) {
 	z.logger.Errorf(msg, args...)
 }
 
-func (z *ZapWrapper) With(args ...interface{}) Logger {
+func (z *ZapWrapper) With(args ...interface{}) *ZapWrapper {
 	return &ZapWrapper{
 		logger: z.logger.With(args...),
 	}

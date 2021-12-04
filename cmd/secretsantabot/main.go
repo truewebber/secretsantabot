@@ -2,10 +2,14 @@ package main
 
 import (
 	"fmt"
+	"syscall"
 
 	"github.com/Netflix/go-env"
 
 	"github.com/truewebber/secretsantabot/internal/log"
+	"github.com/truewebber/secretsantabot/internal/port"
+	"github.com/truewebber/secretsantabot/internal/service"
+	"github.com/truewebber/secretsantabot/internal/signal"
 )
 
 func main() {
@@ -21,35 +25,24 @@ func main() {
 }
 
 func run(logger log.Logger) error {
+	cfg := mustLoadConfig()
+
+	appConfig := service.NewConfig(logger)
+	application := service.MustNewApplication(appConfig)
+	bot := port.MustNewTelegramBot(cfg.TelegramToken, application, logger)
+
+	ctx := signal.ContextClosableOnSignals(syscall.SIGINT, syscall.SIGTERM)
+
+	if err := bot.Run(ctx); err != nil {
+		return fmt.Errorf("bot run: %w", err)
+	}
+
 	return nil
 }
 
 type config struct {
-	AppAddress     string `env:"APP_ADDRESS,required=true"`
-	MetricsAddress string `env:"METRICS_ADDRESS,required=true"`
-
-	ProjectsService struct {
-		Address string `env:"PROJECTS_SERVICE_ADDRESS,required=true"`
-		Token   string `env:"PROJECTS_SERVICE_TOKEN,required=true"`
-	}
-	RecipientService struct {
-		Address string `env:"RECIPIENT_SERVICE_ADDRESS,required=true"`
-	}
-	NotificationSettingsService struct {
-		Address string `env:"NOTIFICATION_SETTINGS_SERVICE_ADDRESS,required=true"`
-	}
-	AdPickerService struct {
-		Address string `env:"AD_PICKER_SERVICE_ADDRESS,required=true"`
-	}
-	ArchiveService struct {
-		Address string `env:"ARCHIVE_SERVICE_ADDRESS,required=true"`
-	}
-	LimitService struct {
-		Host string `env:"LIMIT_SERVICE_HOST,required=true"`
-	}
-	Redis struct {
-		HostWithPort string `env:"REDIS_HOST_WITH_PORT,required=true"`
-	}
+	TelegramToken string `env:"TELEGRAM_TOKEN,required=true"`
+	PostgresURI   string `env:"POSTGRES_URI,required=true"`
 }
 
 func mustLoadConfig() *config {

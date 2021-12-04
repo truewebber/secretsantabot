@@ -1,4 +1,3 @@
 package types
 
-type Person struct {
-}
+type Person struct{}

@@ -1,7 +1,5 @@
 package query
 
-import (
-	"errors"
-)
+import "errors"
 
 var errServiceIsNil = errors.New("service is nil")

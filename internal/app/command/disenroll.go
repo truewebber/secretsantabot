@@ -6,8 +6,7 @@ import (
 )
 
 type (
-	DisEnrollHandler struct {
-	}
+	DisEnrollHandler struct{}
 )
 
 func NewDisEnrollHandler(logger log.Logger) (*DisEnrollHandler, error) {
