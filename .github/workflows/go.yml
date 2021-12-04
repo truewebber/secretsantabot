@@ -13,12 +13,10 @@ jobs:
 
       - name: Set up golangci-lint
         uses: golangci/golangci-lint-action@v2
-
-      - name: print version
-        run: golangci-lint --version
-
-      - name: lint
-        run: golangci-lint -v run -c .golangci.yml ./...
+        with:
+          version: v1.43.0
+          working-directory: ./
+          args: -c .golangci.yml
 
   tests:
     runs-on: ubuntu-latest
