@@ -16,5 +16,6 @@ USER secretsantabot
 
 COPY --from=builder /app/bin/secretsantabot ./secretsantabot
 COPY --from=builder /go/bin/migrate ./migrate
+COPY --from=builder /app/migrations ./migrations
 
 CMD ["./secretsantabot"]
