@@ -9,5 +9,6 @@ build:
     POSTGRES_URI: tosibosi
 release:
   command:
-    - ./migrate -database "postgres://user:pass@127.0.0.1:5432/project?sslmode=disable" -path ./migrations up
+    - echo "${DATABASE_URL}"
+    - ./migrate -database "${DATABASE_URL}" -path ./migrations up
   image: worker
