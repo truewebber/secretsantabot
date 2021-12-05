@@ -11,6 +11,5 @@ build:
     POSTGRES_URI: tosibosi
 release:
   command:
-    - echo "${DATABASE_URL}"
     - ./migrate -database "${DATABASE_URL}" -path ./migrations up
   image: worker
