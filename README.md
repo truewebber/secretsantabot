@@ -23,3 +23,20 @@ TELEGRAM_TOKEN=000000:AAAAAAAAAA DATABASE_URL=postgresql://user:password@127.0.0
 /my - resend magic info for you (only in private chat wi me)
 /help - show this message
 ```
+
+***
+
+**Heroku create new app**
+
+configure manifest module
+
+```bash
+$ heroku update beta
+$ heroku plugins:install @heroku-cli/plugin-manifest
+```
+
+create new app  
+
+```bash
+$ heroku apps:create --manifest -n -s container --region eu APP_NAME
+```
