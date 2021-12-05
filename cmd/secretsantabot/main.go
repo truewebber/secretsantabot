@@ -42,7 +42,7 @@ func run(logger log.Logger) error {
 
 type config struct {
 	TelegramToken string `env:"TELEGRAM_TOKEN,required=true"`
-	PostgresURI   string `env:"POSTGRES_URI,required=true"`
+	PostgresURI   string `env:"DATABASE_URL,required=true"`
 }
 
 func mustLoadConfig() *config {

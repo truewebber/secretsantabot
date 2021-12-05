@@ -9,7 +9,7 @@ go build -o ./secretsantabot ./cmd/secretsantabot/main.go
 
 **Start bot**
 ```bash
-TELEGRAM_TOKEN=000000:AAAAAAAAAA POSTGRES_URI=postgresql://user:password@127.0.0.1:5432/db ./secretsantabot
+TELEGRAM_TOKEN=000000:AAAAAAAAAA DATABASE_URL=postgresql://user:password@127.0.0.1:5432/db ./secretsantabot
 ```
 
 ***
