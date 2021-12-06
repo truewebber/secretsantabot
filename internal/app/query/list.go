@@ -5,9 +5,7 @@ import (
 	"github.com/truewebber/secretsantabot/internal/log"
 )
 
-type (
-	ListHandler struct{}
-)
+type ListHandler struct{}
 
 func NewListHandler(logger log.Logger) (*ListHandler, error) {
 	if logger == nil {

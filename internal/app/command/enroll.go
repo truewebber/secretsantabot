@@ -5,9 +5,7 @@ import (
 	"github.com/truewebber/secretsantabot/internal/log"
 )
 
-type (
-	EnrollHandler struct{}
-)
+type EnrollHandler struct{}
 
 func NewEnrollHandler(logger log.Logger) (*EnrollHandler, error) {
 	if logger == nil {
@@ -26,6 +24,6 @@ func MustNewEnrollHandler(logger log.Logger) *EnrollHandler {
 	return h
 }
 
-func (h *EnrollHandler) Handle(p *types.Person) error {
+func (h *EnrollHandler) Handle(participant *types.Person) error {
 	return nil
 }

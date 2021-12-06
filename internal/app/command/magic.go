@@ -5,9 +5,7 @@ import (
 	"github.com/truewebber/secretsantabot/internal/log"
 )
 
-type (
-	MagicHandler struct{}
-)
+type MagicHandler struct{}
 
 func NewMagicHandler(logger log.Logger) (*MagicHandler, error) {
 	if logger == nil {

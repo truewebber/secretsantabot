@@ -5,20 +5,18 @@ import (
 	"github.com/truewebber/secretsantabot/internal/log"
 )
 
-type (
-	GetMyPersonHandler struct{}
-)
+type GetMyReceiverHandler struct{}
 
-func NewGetMyPersonHandler(logger log.Logger) (*GetMyPersonHandler, error) {
+func NewGetMyReceiverHandler(logger log.Logger) (*GetMyReceiverHandler, error) {
 	if logger == nil {
 		return nil, errServiceIsNil
 	}
 
-	return &GetMyPersonHandler{}, nil
+	return &GetMyReceiverHandler{}, nil
 }
 
-func MustNewGetMyPersonHandler(logger log.Logger) *GetMyPersonHandler {
-	h, err := NewGetMyPersonHandler(logger)
+func MustNewGetMyReceiverHandler(logger log.Logger) *GetMyReceiverHandler {
+	h, err := NewGetMyReceiverHandler(logger)
 	if err != nil {
 		panic(err)
 	}
@@ -26,6 +24,6 @@ func MustNewGetMyPersonHandler(logger log.Logger) *GetMyPersonHandler {
 	return h
 }
 
-func (h *GetMyPersonHandler) Handle() (*types.Person, error) {
+func (h *GetMyReceiverHandler) Handle(giver *types.Person) (*types.Person, error) {
 	return &types.Person{}, nil
 }

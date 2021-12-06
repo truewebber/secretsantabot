@@ -1,3 +1,6 @@
 package types
 
-type Person struct{}
+type Person struct {
+	TelegramUserID int
+	TelegramChatID int64
+}

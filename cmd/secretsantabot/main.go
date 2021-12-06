@@ -7,7 +7,7 @@ import (
 	"github.com/Netflix/go-env"
 
 	"github.com/truewebber/secretsantabot/internal/log"
-	"github.com/truewebber/secretsantabot/internal/port"
+	"github.com/truewebber/secretsantabot/internal/port/telegram"
 	"github.com/truewebber/secretsantabot/internal/service"
 	"github.com/truewebber/secretsantabot/internal/signal"
 )
@@ -27,15 +27,21 @@ func main() {
 func run(logger log.Logger) error {
 	cfg := mustLoadConfig()
 
+	logger.Info("Config inited")
+
 	appConfig := service.NewConfig(logger)
 	application := service.MustNewApplication(appConfig)
-	bot := port.MustNewTelegramBot(cfg.TelegramToken, application, logger)
+	bot := telegram.MustNewTelegramBot(cfg.TelegramToken, application, logger)
+
+	logger.Info("Starting application")
 
 	ctx := signal.ContextClosableOnSignals(syscall.SIGINT, syscall.SIGTERM)
 
 	if err := bot.Run(ctx); err != nil {
 		return fmt.Errorf("bot run: %w", err)
 	}
+
+	logger.Info("Application stopped")
 
 	return nil
 }

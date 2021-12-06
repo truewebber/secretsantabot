@@ -12,13 +12,14 @@ type (
 	}
 
 	Commands struct {
-		Enroll    command.EnrollHandler
-		DisEnroll command.DisEnrollHandler
-		Magic     command.MagicHandler
+		RegisterNewChat *command.RegisterNewChatHandler
+		Enroll          *command.EnrollHandler
+		DisEnroll       *command.DisEnrollHandler
+		Magic           *command.MagicHandler
 	}
 
 	Queries struct {
-		GetMyPerson query.GetMyPersonHandler
-		List        query.ListHandler
+		GetMyReceiver *query.GetMyReceiverHandler
+		List          *query.ListHandler
 	}
 )
