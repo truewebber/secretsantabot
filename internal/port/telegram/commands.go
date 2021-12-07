@@ -1,6 +1,10 @@
 package telegram
 
-import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+import (
+	"fmt"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+)
 
 const (
 	EnrollCommand    = "enroll"
@@ -13,106 +17,117 @@ const (
 )
 
 func (t *Bot) processCommand(command string, message *tgbotapi.Message) {
+	var err error
+
 	switch command {
 	case EnrollCommand:
-		t.Enroll(message)
+		err = t.Enroll(message)
 	case DisEnrollCommand:
-		t.DisEnroll(message)
+		err = t.DisEnroll(message)
 	case ListCommand:
-		t.List(message)
+		err = t.List(message)
 	case MagicCommand:
-		t.Magic(message)
+		err = t.Magic(message)
 	case MyCommand:
-		t.My(message)
+		err = t.My(message)
 	case HelpCommand:
-		t.Help(message)
+		err = t.Help(message)
 	case StartCommand:
-		t.Start(message)
+		err = t.Start(message)
 	}
-}
 
-func (t *Bot) Enroll(message *tgbotapi.Message) {
-	person, err := t.builder.buildPersonFromMessage(message)
 	if err != nil {
-		t.logger.Infof("failed build person, message: %#v, error: %v", message, err)
+		t.logger.Errorf("failed process `%s` command, message: %v, error: %v", command, message, err)
 
 		return
+	}
+
+	t.logger.Infof("`%s`, from `%s` in chat %v", command, message.From, message.Chat)
+}
+
+//nolint:dupl // no sense to merge this func
+func (t *Bot) Enroll(message *tgbotapi.Message) error {
+	person, err := t.builder.buildPersonFromMessage(message)
+	if err != nil {
+		return fmt.Errorf("build person from message: %w", err)
 	}
 
 	if err := t.application.Commands.Enroll.Handle(person); err != nil {
-		t.logger.Infof("failed handle enroll, message: %#v, error: %v", message, err)
-
-		return
+		return fmt.Errorf("handle enroll: %w", err)
 	}
 
 	replyMessage := t.builder.buildEnrollSuccessMessage(message.From, message.Chat)
 
-	t.SendAndLogOnError(replyMessage)
+	if _, err := t.bot.Send(replyMessage); err != nil {
+		return fmt.Errorf("send message: %w", err)
+	}
+
+	return nil
 }
 
-func (t *Bot) DisEnroll(message *tgbotapi.Message) {
+//nolint:dupl // no sense to merge this func
+func (t *Bot) DisEnroll(message *tgbotapi.Message) error {
 	person, err := t.builder.buildPersonFromMessage(message)
 	if err != nil {
-		t.logger.Infof("failed build person, message: %#v, error: %v", message, err)
-
-		return
+		return fmt.Errorf("build person from message: %w", err)
 	}
 
 	if err := t.application.Commands.DisEnroll.Handle(person); err != nil {
-		t.logger.Infof("failed handle disenroll, message: %#v, error: %v", message, err)
-
-		return
+		return fmt.Errorf("handle disenroll: %w", err)
 	}
 
 	replyMessage := t.builder.buildDisEnrollSuccessMessage(message.From, message.Chat)
 
-	t.SendAndLogOnError(replyMessage)
+	if _, err := t.bot.Send(replyMessage); err != nil {
+		return fmt.Errorf("send message: %w", err)
+	}
+
+	return nil
 }
 
-func (t *Bot) List(message *tgbotapi.Message) {
+func (t *Bot) List(message *tgbotapi.Message) error {
 	participants, err := t.application.Queries.List.Handle()
 	if err != nil {
-		t.logger.Infof("failed handle disenroll, message: %#v, error: %v", message, err)
-
-		return
+		return fmt.Errorf("handle list of participants: %w", err)
 	}
 
 	replyMessage, err := t.builder.buildListOfParticipantsMessage(message.Chat, participants)
 	if err != nil {
-		t.logger.Errorf("failed build list of participants message, message: %#v, error: %v", message, err)
-
-		return
+		return fmt.Errorf("build list of participants message: %w", err)
 	}
 
-	t.SendAndLogOnError(replyMessage)
+	if _, err := t.bot.Send(replyMessage); err != nil {
+		return fmt.Errorf("send message: %w", err)
+	}
+
+	return nil
 }
 
-func (t *Bot) Magic(message *tgbotapi.Message) {
+func (t *Bot) Magic(_ *tgbotapi.Message) error {
+	return nil
 }
 
-func (t *Bot) My(message *tgbotapi.Message) {
+func (t *Bot) My(message *tgbotapi.Message) error {
 	giver, err := t.builder.buildPersonFromMessage(message)
 	if err != nil {
-		t.logger.Infof("failed build person, message: %#v, error: %v", message, err)
-
-		return
+		return fmt.Errorf("build person from message: %w", err)
 	}
 
 	receiver, err := t.application.Queries.GetMyReceiver.Handle(giver)
 	if err != nil {
-		t.logger.Errorf("failed get receiver by giver, message: %#v, error: %v", message, err)
-
-		return
+		return fmt.Errorf("handle get receiver by giver: %w", err)
 	}
 
 	replyMessage, err := t.builder.buildMyReceiverMessage(giver.TelegramUserID, receiver)
 	if err != nil {
-		t.logger.Errorf("failed build my receiver message, message: %#v, error: %v", message, err)
-
-		return
+		return fmt.Errorf("build my receiver message: %w", err)
 	}
 
-	t.SendAndLogOnError(replyMessage)
+	if _, err := t.bot.Send(replyMessage); err != nil {
+		return fmt.Errorf("send message: %w", err)
+	}
+
+	return nil
 }
 
 const helpText = "/enroll - enroll the game\n" +
@@ -123,29 +138,33 @@ const helpText = "/enroll - enroll the game\n" +
 	"/help - show this message\n" +
 	"/start - register new chat (don't work with private messages)\n"
 
-func (t *Bot) Help(message *tgbotapi.Message) {
-	replyMsg := tgbotapi.NewMessage(message.Chat.ID, helpText)
+func (t *Bot) Help(message *tgbotapi.Message) error {
+	replyMessage := tgbotapi.NewMessage(message.Chat.ID, helpText)
 
-	t.SendAndLogOnError(&replyMsg)
+	if _, err := t.bot.Send(replyMessage); err != nil {
+		return fmt.Errorf("send message: %w", err)
+	}
+
+	return nil
 }
 
 const startText = "Dummy start text!"
 
-func (t *Bot) Start(message *tgbotapi.Message) {
+func (t *Bot) Start(message *tgbotapi.Message) error {
 	chat, err := t.builder.buildChatFromMessage(message)
 	if err != nil {
-		t.logger.Infof("failed build chat, message: %#v, error: %v", message, err)
-
-		return
+		return fmt.Errorf("build chat from message: %w", err)
 	}
 
 	if err := t.application.Commands.RegisterNewChat.Handle(chat); err != nil {
-		t.logger.Errorf("failed register new chat, message: %#v, error: %v", message, err)
-
-		return
+		return fmt.Errorf("handle register new chat: %w", err)
 	}
 
-	replyMsg := tgbotapi.NewMessage(message.Chat.ID, startText)
+	replyMessage := tgbotapi.NewMessage(message.Chat.ID, startText)
 
-	t.SendAndLogOnError(&replyMsg)
+	if _, err := t.bot.Send(replyMessage); err != nil {
+		return fmt.Errorf("send message: %w", err)
+	}
+
+	return nil
 }

@@ -15,6 +15,7 @@ type Bot struct {
 	application *app.Application
 	builder     builder
 	logger      log.Logger
+	me          *tgbotapi.User
 }
 
 func NewTelegramBot(token string, application *app.Application, logger log.Logger) (*Bot, error) {
@@ -23,8 +24,14 @@ func NewTelegramBot(token string, application *app.Application, logger log.Logge
 		return nil, fmt.Errorf("create bot api: %w", err)
 	}
 
+	user, err := bot.GetMe()
+	if err != nil {
+		return nil, fmt.Errorf("get me: %w", err)
+	}
+
 	return &Bot{
 		bot:         bot,
+		me:          &user,
 		application: application,
 		builder:     newBuilder(bot),
 		logger:      logger,
@@ -96,7 +103,7 @@ func messageFromUpdate(update *tgbotapi.Update) *tgbotapi.Message {
 }
 
 func (t *Bot) processMessage(message *tgbotapi.Message) {
-	command := message.Command()
+	command := t.getCommandFromMessage(message)
 	if command == "" {
 		return
 	}
@@ -104,8 +111,28 @@ func (t *Bot) processMessage(message *tgbotapi.Message) {
 	t.processCommand(command, message)
 }
 
-func (t *Bot) SendAndLogOnError(msg *tgbotapi.MessageConfig) {
-	if _, err := t.bot.Send(msg); err != nil {
-		t.logger.Errorf("send message: %w", err)
+func (t *Bot) getCommandFromMessage(message *tgbotapi.Message) string {
+	command := message.Command()
+
+	if t.isMeANewMember(message.NewChatMembers) && command == "" {
+		command = StartCommand
 	}
+
+	return command
+}
+
+func (t *Bot) isMeANewMember(newUsersPtr *[]tgbotapi.User) bool {
+	if newUsersPtr == nil {
+		return false
+	}
+
+	newUsers := *newUsersPtr
+
+	for i := range newUsers {
+		if t.me.ID == newUsers[i].ID {
+			return true
+		}
+	}
+
+	return false
 }
