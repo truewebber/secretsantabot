@@ -1,7 +1,6 @@
 package chat
 
 type Chat struct {
-	Participants []Person
-	Magic        Magic
-	Admin        Person
+	Admin          *Person
+	TelegramChatID int64
 }

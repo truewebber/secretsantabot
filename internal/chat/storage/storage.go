@@ -1,18 +1,30 @@
 package storage
 
-import "github.com/truewebber/secretsantabot/internal/chat"
+import (
+	"context"
 
-type Storage interface {
-	SaveChat(*chat.Chat) error
-	SavePerson(*chat.Person) error
+	"github.com/truewebber/secretsantabot/internal/chat"
+)
 
-	SaveMagic(chat.Magic) error
-	DropMagic() error
-	ListMagic() (chat.Magic, error)
-	IsMagicDone() (bool, error)
+type (
+	Storage interface {
+		DoOperationOnTx(func(context.Context, Tx) error) error
+	}
 
-	ListEnrolled() ([]chat.Person, error)
-	Enroll(*chat.Person) error
-	DropEnroll(*chat.Person) error
-	IsEnroll(*chat.Person) (bool, error)
-}
+	Tx interface {
+		InsertChat(context.Context, *chat.Chat) error
+		UpdateChat(context.Context, *chat.Chat) error
+		GetChatByTelegramID(context.Context, int64) (*chat.Chat, error)
+
+		InsertPerson(context.Context, *chat.Person) error
+		GetPersonByTelegramID(context.Context, int) (*chat.Person, error)
+
+		InsertMagic(context.Context, *chat.Chat, chat.Magic) error
+		GetMagic(context.Context, *chat.Chat) (chat.Magic, error)
+
+		ListParticipants(context.Context, *chat.Chat) ([]chat.Person, error)
+
+		InsertNewParticipant(context.Context, *chat.Chat, *chat.Person) error
+		DeleteParticipant(context.Context, *chat.Chat, *chat.Person) error
+	}
+)

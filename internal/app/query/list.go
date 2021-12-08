@@ -2,21 +2,24 @@ package query
 
 import (
 	"github.com/truewebber/secretsantabot/internal/app/types"
+	"github.com/truewebber/secretsantabot/internal/chat/storage"
 	"github.com/truewebber/secretsantabot/internal/log"
 )
 
-type ListHandler struct{}
+type ListHandler struct {
+	service storage.Storage
+}
 
-func NewListHandler(logger log.Logger) (*ListHandler, error) {
-	if logger == nil {
+func NewListHandler(service storage.Storage, logger log.Logger) (*ListHandler, error) {
+	if service == nil || logger == nil {
 		return nil, errServiceIsNil
 	}
 
-	return &ListHandler{}, nil
+	return &ListHandler{service: service}, nil
 }
 
-func MustNewListHandler(logger log.Logger) *ListHandler {
-	h, err := NewListHandler(logger)
+func MustNewListHandler(service storage.Storage, logger log.Logger) *ListHandler {
+	h, err := NewListHandler(service, logger)
 	if err != nil {
 		panic(err)
 	}

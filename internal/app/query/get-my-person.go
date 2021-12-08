@@ -2,21 +2,24 @@ package query
 
 import (
 	"github.com/truewebber/secretsantabot/internal/app/types"
+	"github.com/truewebber/secretsantabot/internal/chat/storage"
 	"github.com/truewebber/secretsantabot/internal/log"
 )
 
-type GetMyReceiverHandler struct{}
+type GetMyReceiverHandler struct {
+	service storage.Storage
+}
 
-func NewGetMyReceiverHandler(logger log.Logger) (*GetMyReceiverHandler, error) {
-	if logger == nil {
+func NewGetMyReceiverHandler(service storage.Storage, logger log.Logger) (*GetMyReceiverHandler, error) {
+	if service == nil || logger == nil {
 		return nil, errServiceIsNil
 	}
 
-	return &GetMyReceiverHandler{}, nil
+	return &GetMyReceiverHandler{service: service}, nil
 }
 
-func MustNewGetMyReceiverHandler(logger log.Logger) *GetMyReceiverHandler {
-	h, err := NewGetMyReceiverHandler(logger)
+func MustNewGetMyReceiverHandler(service storage.Storage, logger log.Logger) *GetMyReceiverHandler {
+	h, err := NewGetMyReceiverHandler(service, logger)
 	if err != nil {
 		panic(err)
 	}

@@ -2,21 +2,24 @@ package command
 
 import (
 	"github.com/truewebber/secretsantabot/internal/app/types"
+	"github.com/truewebber/secretsantabot/internal/chat/storage"
 	"github.com/truewebber/secretsantabot/internal/log"
 )
 
-type MagicHandler struct{}
+type MagicHandler struct {
+	service storage.Storage
+}
 
-func NewMagicHandler(logger log.Logger) (*MagicHandler, error) {
-	if logger == nil {
+func NewMagicHandler(service storage.Storage, logger log.Logger) (*MagicHandler, error) {
+	if service == nil || logger == nil {
 		return nil, errServiceIsNil
 	}
 
-	return &MagicHandler{}, nil
+	return &MagicHandler{service: service}, nil
 }
 
-func MustNewMagicHandler(logger log.Logger) *MagicHandler {
-	h, err := NewMagicHandler(logger)
+func MustNewMagicHandler(service storage.Storage, logger log.Logger) *MagicHandler {
+	h, err := NewMagicHandler(service, logger)
 	if err != nil {
 		panic(err)
 	}

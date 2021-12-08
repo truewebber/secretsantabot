@@ -15,6 +15,6 @@ type (
 )
 
 const (
-	OpenMagicStatus = iota + 1
+	OpenMagicStatus MagicStatus = iota + 1
 	ClosedMagicStatus
 )
