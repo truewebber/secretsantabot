@@ -3,7 +3,7 @@ package types
 import "github.com/truewebber/secretsantabot/internal/chat"
 
 type Person struct {
-	TelegramUserID int
+	TelegramUserID int64
 	TelegramChatID int64
 }
 

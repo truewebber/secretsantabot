@@ -7,6 +7,7 @@ type Chat struct {
 	Participants   []Person
 	Magic          Magic
 	TelegramChatID int64
+	IsGroup        bool
 }
 
 func ChatToDomain(c *Chat) *chat.Chat {

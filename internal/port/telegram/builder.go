@@ -19,8 +19,8 @@ func newBuilder(bot *tgbotapi.BotAPI) builder {
 	}
 }
 
-func (b builder) getTelegramUser(chatID int64, userID int) (*tgbotapi.User, error) {
-	member, err := b.bot.GetChatMember(tgbotapi.ChatConfigWithUser{ChatID: chatID, UserID: userID})
+func (b builder) getTelegramUser(chatID, userID int64) (*tgbotapi.User, error) {
+	member, err := b.bot.GetChatMember(tgbotapi.ChatConfigWithUser{ChatID: chatID, UserID: int(userID)})
 	if err != nil {
 		return nil, fmt.Errorf("get chat member: %w", err)
 	}
@@ -43,7 +43,7 @@ func (builder) buildPersonFromMessage(message *tgbotapi.Message) (*types.Person,
 	}
 
 	return &types.Person{
-		TelegramUserID: message.From.ID,
+		TelegramUserID: int64(message.From.ID),
 		TelegramChatID: message.Chat.ID,
 	}, nil
 }
@@ -55,6 +55,7 @@ func (b builder) buildChatFromMessage(message *tgbotapi.Message) (*types.Chat, e
 	}
 
 	return &types.Chat{
+		IsGroup:        message.Chat.IsGroup(),
 		TelegramChatID: message.Chat.ID,
 		Admin:          person,
 	}, nil
@@ -121,15 +122,13 @@ func (b builder) listOfParticipantsToText(participants []types.Person) (string, 
 	return text, nil
 }
 
-func (b builder) buildMyReceiverMessage(chatID int, receiver *types.Person) (*tgbotapi.MessageConfig, error) {
-	chatID64 := int64(chatID)
-
+func (b builder) buildMyReceiverMessage(chatID int64, receiver *types.Person) (*tgbotapi.MessageConfig, error) {
 	text, err := b.getMyReceiverToText(receiver)
 	if err != nil {
 		return nil, fmt.Errorf("receiver to text: %w", err)
 	}
 
-	replyMessage := tgbotapi.NewMessage(chatID64, text)
+	replyMessage := tgbotapi.NewMessage(chatID, text)
 
 	return &replyMessage, nil
 }

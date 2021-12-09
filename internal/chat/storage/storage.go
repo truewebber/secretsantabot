@@ -17,7 +17,7 @@ type (
 		GetChatByTelegramID(context.Context, int64) (*chat.Chat, error)
 
 		InsertPerson(context.Context, *chat.Person) error
-		GetPersonByTelegramID(context.Context, int) (*chat.Person, error)
+		GetPersonByTelegramID(context.Context, int64) (*chat.Person, error)
 
 		InsertMagic(context.Context, *chat.Chat, chat.Magic) error
 		GetMagic(context.Context, *chat.Chat) (chat.Magic, error)

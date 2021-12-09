@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	apperrors "github.com/truewebber/secretsantabot/internal/app/errors"
 	"github.com/truewebber/secretsantabot/internal/app/types"
 	"github.com/truewebber/secretsantabot/internal/chat/storage"
 	"github.com/truewebber/secretsantabot/internal/log"
@@ -31,6 +32,10 @@ func MustNewRegisterNewChatHandler(service storage.Storage, logger log.Logger) *
 }
 
 func (h *RegisterNewChatHandler) Handle(appChat *types.Chat) error {
+	if !appChat.IsGroup {
+		return apperrors.ErrRegisterLocalChatIsRestricted
+	}
+
 	chatToSave := types.ChatToDomain(appChat)
 
 	doErr := h.service.DoOperationOnTx(func(ctx context.Context, tx storage.Tx) error {

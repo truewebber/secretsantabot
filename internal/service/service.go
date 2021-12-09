@@ -19,9 +19,10 @@ type (
 	}
 )
 
-func NewConfig(logger log.Logger) *Config {
+func NewConfig(chatService ChatService, logger log.Logger) *Config {
 	return &Config{
-		Logger: logger,
+		ChatService: chatService,
+		Logger:      logger,
 	}
 }
 

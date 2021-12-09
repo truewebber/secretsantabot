@@ -1,9 +1,12 @@
 package telegram
 
 import (
+	"errors"
 	"fmt"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+
+	apperrors "github.com/truewebber/secretsantabot/internal/app/errors"
 )
 
 const (
@@ -148,16 +151,31 @@ func (t *Bot) Help(message *tgbotapi.Message) error {
 	return nil
 }
 
-const startText = "Dummy start text!"
+const (
+	startText                         = "Dummy start text!"
+	registerLocalChatIsRestrictedText = "Forbidden!"
+)
 
 func (t *Bot) Start(message *tgbotapi.Message) error {
-	chat, err := t.builder.buildChatFromMessage(message)
-	if err != nil {
-		return fmt.Errorf("build chat from message: %w", err)
+	chat, buildErr := t.builder.buildChatFromMessage(message)
+	if buildErr != nil {
+		return fmt.Errorf("build chat from message: %w", buildErr)
 	}
 
-	if err := t.application.Commands.RegisterNewChat.Handle(chat); err != nil {
-		return fmt.Errorf("handle register new chat: %w", err)
+	handleErr := t.application.Commands.RegisterNewChat.Handle(chat)
+
+	if errors.Is(handleErr, apperrors.ErrRegisterLocalChatIsRestricted) {
+		replyMessage := tgbotapi.NewMessage(message.Chat.ID, registerLocalChatIsRestrictedText)
+
+		if _, err := t.bot.Send(replyMessage); err != nil {
+			return fmt.Errorf("send message: %w", err)
+		}
+
+		return nil
+	}
+
+	if handleErr != nil {
+		return fmt.Errorf("handle register new chat: %w", handleErr)
 	}
 
 	replyMessage := tgbotapi.NewMessage(message.Chat.ID, startText)

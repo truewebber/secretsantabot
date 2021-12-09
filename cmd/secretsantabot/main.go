@@ -29,7 +29,7 @@ func run(logger log.Logger) error {
 
 	logger.Info("Config inited")
 
-	appConfig := service.NewConfig(logger)
+	appConfig := service.NewConfig(service.ChatService{PostgresURI: cfg.PostgresURI}, logger)
 	application := service.MustNewApplication(appConfig)
 	bot := telegram.MustNewTelegramBot(cfg.TelegramToken, application, logger)
 
@@ -48,7 +48,7 @@ func run(logger log.Logger) error {
 
 type config struct {
 	TelegramToken string `env:"TELEGRAM_TOKEN,required=true"`
-	PostgresURI   string `env:"DATABASE_URL,required=true"`
+	PostgresURI   string `env:"POSTGRES_URI,required=true"`
 }
 
 func mustLoadConfig() *config {
