@@ -55,7 +55,7 @@ func (b builder) buildChatFromMessage(message *tgbotapi.Message) (*types.Chat, e
 	}
 
 	return &types.Chat{
-		IsGroup:        message.Chat.IsGroup(),
+		IsGroup:        message.Chat.IsGroup() || message.Chat.IsSuperGroup(),
 		TelegramChatID: message.Chat.ID,
 		Admin:          person,
 	}, nil
