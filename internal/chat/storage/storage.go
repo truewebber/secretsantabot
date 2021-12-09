@@ -13,7 +13,6 @@ type (
 
 	Tx interface {
 		InsertChat(context.Context, *chat.Chat) error
-		UpdateChat(context.Context, *chat.Chat) error
 		GetChatByTelegramID(context.Context, int64) (*chat.Chat, error)
 
 		InsertPerson(context.Context, *chat.Person) error

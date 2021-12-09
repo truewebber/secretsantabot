@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v4"
 
@@ -16,11 +18,39 @@ func newStorageTx(tx pgx.Tx) *StorageTx {
 	return &StorageTx{tx: tx}
 }
 
-func (s StorageTx) InsertChat(ctx context.Context, chat *chatdomain.Chat) error {
-	return nil
-}
+const (
+	insertChatQuery = "INSERT INTO chats (tg_chat_id, tg_admin_id, deleted) VALUES ($1, $2, false) returning id;"
 
-func (s StorageTx) UpdateChat(ctx context.Context, chat *chatdomain.Chat) error {
+	restoreChatQuery = "UPDATE chats SET deleted=false WHERE id=$1;"
+
+	selectChatQuery = "SELECT id, deleted FROM chats WHERE tg_chat_id=$1 AND tg_admin_id=$2;"
+)
+
+func (s StorageTx) InsertChat(ctx context.Context, chat *chatdomain.Chat) error {
+	var deleted bool
+
+	selectErr := s.tx.QueryRow(ctx, selectChatQuery, chat.TelegramChatID, chat.Admin.TelegramUserID).
+		Scan(&chat.ID, &deleted)
+
+	if errors.Is(selectErr, pgx.ErrNoRows) {
+		insertErr := s.tx.QueryRow(ctx, insertChatQuery, chat.TelegramChatID, chat.Admin.TelegramUserID).Scan(&chat.ID)
+		if insertErr != nil {
+			return fmt.Errorf("query row insert chat: %w", insertErr)
+		}
+
+		return nil
+	}
+
+	if selectErr != nil {
+		return fmt.Errorf("query row select chat: %w", selectErr)
+	}
+
+	if deleted {
+		if _, err := s.tx.Exec(ctx, restoreChatQuery, chat.ID); err != nil {
+			return fmt.Errorf("exec restore chat: %w", err)
+		}
+	}
+
 	return nil
 }
 
