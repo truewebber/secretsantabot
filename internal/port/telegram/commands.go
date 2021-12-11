@@ -45,7 +45,7 @@ func (t *Bot) processCommand(command string, message *tgbotapi.Message) {
 		return
 	}
 
-	t.logger.Infof("`%s`, from `%s` in chat %v", command, message.From, message.Chat)
+	t.logger.Infof("`%s`, from `%#v` in chat `%#v`", command, message.From, message.Chat)
 }
 
 //nolint:dupl // no sense to merge this func

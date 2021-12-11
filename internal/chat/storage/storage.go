@@ -18,12 +18,14 @@ type (
 		InsertPerson(context.Context, *chat.Person) error
 		GetPersonByTelegramID(context.Context, int64) (*chat.Person, error)
 
-		InsertMagic(context.Context, *chat.Chat, chat.Magic) error
-		GetMagic(context.Context, *chat.Chat) (chat.Magic, error)
+		InsertNewMagicVersion(context.Context, *chat.MagicVersion) error
+		GetLatestMagicVersion(context.Context, *chat.Chat) (*chat.MagicVersion, error)
 
-		ListParticipants(context.Context, *chat.Chat) ([]chat.Person, error)
+		InsertParticipant(context.Context, *chat.MagicVersion, *chat.Person) error
+		DeleteParticipant(context.Context, *chat.MagicVersion, *chat.Person) error
+		ListParticipants(context.Context, *chat.MagicVersion) ([]chat.Person, error)
 
-		InsertNewParticipant(context.Context, *chat.Chat, *chat.Person) error
-		DeleteParticipant(context.Context, *chat.Chat, *chat.Person) error
+		InsertMagic(context.Context, *chat.MagicVersion, chat.Magic) error
+		GetMagic(context.Context, *chat.MagicVersion) (chat.Magic, error)
 	}
 )

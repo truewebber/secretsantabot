@@ -11,8 +11,15 @@ type (
 		Receiver *Person
 	}
 
-	MagicStatus uint8
+	MagicVersion struct {
+		Chat    *Chat
+		ID      uint64
+		Version uint8
+		Status  MagicStatus
+	}
 )
+
+type MagicStatus uint8
 
 const (
 	OpenMagicStatus MagicStatus = iota + 1

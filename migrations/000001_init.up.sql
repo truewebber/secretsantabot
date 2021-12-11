@@ -23,14 +23,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS participants__tg_chat_id__tg_users_id__uidx ON
 CREATE TABLE magic_chat_history
 (
     id         BIGSERIAL NOT NULL PRIMARY KEY,
-    tg_chat_id BIGINT    NOT NULL,
+    chat_id    BIGINT    NOT NULL,
     version    SMALLINT  NOT NULL,
     status     SMALLINT  NOT NULL,
     deleted    BOOLEAN   NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
-    updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp
+    updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    FOREIGN KEY (chat_id) REFERENCES chats (id)
 );
-CREATE UNIQUE INDEX IF NOT EXISTS magic_chat_history__tg_chat_id__version__uidx ON magic_chat_history (tg_chat_id, version);
+CREATE UNIQUE INDEX IF NOT EXISTS magic_chat_history__tg_chat_id__version__uidx ON magic_chat_history (chat_id, version);
 
 CREATE TABLE magic_participants
 (

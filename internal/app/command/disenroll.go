@@ -1,4 +1,3 @@
-//nolint:dupl // while under dev
 package command
 
 import (
