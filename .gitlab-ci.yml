@@ -43,7 +43,7 @@ inspect_golang:
     - .go-cache
     - .inspect_go_code
   variables: &golang_job_settings_env_vars
-    CI_GOLANG_APP_DIR: ""
+    CI_GOLANG_APP_DIR: "./"
   only:
     - merge_requests
     - master
