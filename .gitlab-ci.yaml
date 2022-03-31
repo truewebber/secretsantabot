@@ -46,6 +46,7 @@ inspect_golang:
     CI_GOLANG_APP_DIR: "src"
   only:
     - merge_requests
+    - master
 
 test_go_code:
   stage: test
@@ -56,3 +57,4 @@ test_go_code:
     <<: *golang_job_settings_env_vars
   only:
     - merge_requests
+    - master
