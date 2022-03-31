@@ -2,9 +2,12 @@ package storage
 
 import (
 	"context"
+	"errors"
 
 	"github.com/truewebber/secretsantabot/internal/chat"
 )
+
+var ErrNotFound = errors.New("not found")
 
 type (
 	Storage interface {

@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	apperrors "github.com/truewebber/secretsantabot/internal/app/errors"
@@ -45,6 +46,16 @@ func (h *RegisterNewChatHandler) Handle(appChat *types.Chat) error {
 
 		if err := tx.InsertPerson(ctx, chatToSave.Admin); err != nil {
 			return fmt.Errorf("insert person: %w", err)
+		}
+
+		version, err := tx.GetLatestMagicVersion(ctx, chatToSave)
+
+		if errors.Is(err, storage.ErrNotFound) {
+
+		}
+
+		if err != nil {
+			return fmt.Errorf("get latest magic version: %w", err)
 		}
 
 		return nil

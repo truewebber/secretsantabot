@@ -1,0 +1,58 @@
+stages:
+  - lint
+  - test
+
+.go-cache:
+  variables:
+    GOPATH: ${CI_PROJECT_DIR}/.go_cache
+    GOPRIVATE: ${CI_SERVER_HOST}
+  before_script:
+    - mkdir -p .go_cache
+    - apt-get update && apt-get install git -y
+  cache:
+    key:
+      files:
+        - ${CI_PROJECT_DIR}/${CI_GOLANG_APP_DIR}/go.mod
+        - ${CI_PROJECT_DIR}/${CI_GOLANG_APP_DIR}/go.sum
+    paths:
+      - ${GOPATH}
+
+.inspect_go_code:
+  tags:
+    - docker
+  image:
+    name: golangci/golangci-lint:v1.42
+    entrypoint: [ "" ]
+  script:
+    - cd ${CI_GOLANG_APP_DIR}
+    - golangci-lint run -c .golangci.yml -v ./...
+
+.test_go_code:
+  image: golang:1.18.0-buster
+  tags:
+    - docker
+  script:
+    - cd ./${CI_GOLANG_APP_DIR}
+    - go test -race -coverpkg=./... -coverprofile=coverage.out ./...
+    - go tool cover -func=coverage.out | tail -n 1
+  coverage: '/^total:\t+\(statements\)\t+(\d+\.\d+)%/'
+
+inspect_golang:
+  stage: lint
+  extends:
+    - .go-cache
+    - .inspect_go_code
+  variables: &golang_job_settings_env_vars
+    CI_GOLANG_APP_DIR: "src"
+  only:
+    - merge_requests
+
+test_go_code:
+  stage: test
+  extends:
+    - .go-cache
+    - .test_go_code
+  variables:
+    <<: *golang_job_settings_env_vars
+  only:
+    - merge_requests
