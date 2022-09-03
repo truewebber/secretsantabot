@@ -5,7 +5,6 @@ import "github.com/truewebber/secretsantabot/domain/chat"
 type Chat struct {
 	Admin          *Person
 	Participants   []Person
-	Magic          Magic
 	TelegramChatID int64
 	IsGroup        bool
 }

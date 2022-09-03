@@ -1,39 +1,34 @@
-CREATE TABLE chats
+CREATE TABLE IF NOT EXISTS users
 (
-    id          BIGSERIAL NOT NULL PRIMARY KEY,
-    tg_chat_id  BIGINT    NOT NULL,
-    tg_admin_id BIGINT    NOT NULL,
-    deleted     BOOLEAN   NOT NULL,
-    created_at  TIMESTAMP NOT NULL DEFAULT current_timestamp,
-    updated_at  TIMESTAMP NOT NULL DEFAULT current_timestamp
-);
-CREATE UNIQUE INDEX IF NOT EXISTS chats__tg_chat_id__uidx ON chats (tg_chat_id);
-CREATE INDEX IF NOT EXISTS chats__tg_admin_id__idx ON chats (tg_admin_id);
-
-CREATE TABLE users
-(
-    id         BIGSERIAL NOT NULL PRIMARY KEY,
-    tg_chat_id BIGINT    NOT NULL,
-    tg_user_id BIGINT    NOT NULL,
+    id         BIGINT    NOT NULL PRIMARY KEY,
     deleted    BOOLEAN   NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT current_timestamp
+    created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp
 );
-CREATE UNIQUE INDEX IF NOT EXISTS participants__tg_chat_id__tg_users_id__uidx ON users (tg_chat_id, tg_user_id);
 
-CREATE TABLE magic_chat_history
+CREATE TABLE IF NOT EXISTS chats
+(
+    id            BIGINT    NOT NULL PRIMARY KEY,
+    admin_user_id BIGINT    NOT NULL,
+    deleted       BOOLEAN   NOT NULL,
+    created_at    TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    updated_at    TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    FOREIGN KEY (admin_user_id) REFERENCES users (id)
+);
+CREATE INDEX IF NOT EXISTS chats__admin_user_id__idx ON chats (admin_user_id);
+
+CREATE TABLE IF NOT EXISTS magic_chat_history
 (
     id         BIGSERIAL NOT NULL PRIMARY KEY,
     chat_id    BIGINT    NOT NULL,
-    version    SMALLINT  NOT NULL,
-    status     SMALLINT  NOT NULL,
     deleted    BOOLEAN   NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
     updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
     FOREIGN KEY (chat_id) REFERENCES chats (id)
 );
-CREATE UNIQUE INDEX IF NOT EXISTS magic_chat_history__tg_chat_id__version__uidx ON magic_chat_history (chat_id, version);
+CREATE INDEX IF NOT EXISTS magic_chat_history__chat_id__idx ON magic_chat_history (chat_id);
 
-CREATE TABLE magic_participants
+CREATE TABLE IF NOT EXISTS magic_participants
 (
     id                    BIGSERIAL NOT NULL PRIMARY KEY,
     magic_chat_history_id BIGINT    NOT NULL,
@@ -47,7 +42,7 @@ CREATE TABLE magic_participants
 CREATE UNIQUE INDEX IF NOT EXISTS magic_participants__chat_id__participant_id__uidx
     ON magic_participants (magic_chat_history_id, participant_id);
 
-CREATE TABLE magic_results
+CREATE TABLE IF NOT EXISTS magic_results
 (
     id                      BIGSERIAL NOT NULL PRIMARY KEY,
     magic_chat_history_id   BIGINT    NOT NULL,
