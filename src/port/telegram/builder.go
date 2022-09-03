@@ -44,7 +44,6 @@ func (builder) buildPersonFromMessage(message *tgbotapi.Message) (*types.Person,
 
 	return &types.Person{
 		TelegramUserID: int64(message.From.ID),
-		TelegramChatID: message.Chat.ID,
 	}, nil
 }
 
@@ -81,21 +80,21 @@ func (builder) buildDisEnrollSuccessMessage(from *tgbotapi.User, chat *tgbotapi.
 	return &replyMessage
 }
 
-func (b builder) buildListOfParticipantsMessage(chat *tgbotapi.Chat, participants []types.Person,
+func (b builder) buildListOfParticipantsMessage(chat *types.Chat, participants []types.Person,
 ) (*tgbotapi.MessageConfig, error) {
-	text, err := b.listOfParticipantsToText(participants)
+	text, err := b.listOfParticipantsToText(chat, participants)
 	if err != nil {
 		return nil, fmt.Errorf("list of participants to text: %w", err)
 	}
 
-	replyMessage := tgbotapi.NewMessage(chat.ID, text)
+	replyMessage := tgbotapi.NewMessage(chat.TelegramChatID, text)
 
 	return &replyMessage, nil
 }
 
 const ListIsEmptyMessage = "No one person has enroll yet."
 
-func (b builder) listOfParticipantsToText(participants []types.Person) (string, error) {
+func (b builder) listOfParticipantsToText(chat *types.Chat, participants []types.Person) (string, error) {
 	if len(participants) == 0 {
 		return ListIsEmptyMessage, nil
 	}
@@ -103,7 +102,7 @@ func (b builder) listOfParticipantsToText(participants []types.Person) (string, 
 	var text string
 
 	for index, participant := range participants {
-		user, err := b.getTelegramUser(participant.TelegramChatID, participant.TelegramUserID)
+		user, err := b.getTelegramUser(chat.TelegramChatID, participant.TelegramUserID)
 		if err != nil {
 			return "", fmt.Errorf("get telegram user: %w", err)
 		}
@@ -122,21 +121,24 @@ func (b builder) listOfParticipantsToText(participants []types.Person) (string, 
 	return text, nil
 }
 
-func (b builder) buildMyReceiverMessage(chatID int64, receiver *types.Person) (*tgbotapi.MessageConfig, error) {
-	text, err := b.getMyReceiverToText(receiver)
+func (b builder) buildMyReceiverMessage(
+	chat *types.Chat,
+	recipient, receiver *types.Person,
+) (*tgbotapi.MessageConfig, error) {
+	text, err := b.getMyReceiverToText(chat, receiver)
 	if err != nil {
 		return nil, fmt.Errorf("receiver to text: %w", err)
 	}
 
-	replyMessage := tgbotapi.NewMessage(chatID, text)
+	replyMessage := tgbotapi.NewMessage(recipient.TelegramUserID, text)
 
 	return &replyMessage, nil
 }
 
 const getMyReceiverMessageTemplate = "Hey! Your target is `%s %s%s`"
 
-func (b builder) getMyReceiverToText(receiver *types.Person) (string, error) {
-	user, err := b.getTelegramUser(receiver.TelegramChatID, receiver.TelegramUserID)
+func (b builder) getMyReceiverToText(chat *types.Chat, receiver *types.Person) (string, error) {
+	user, err := b.getTelegramUser(chat.TelegramChatID, receiver.TelegramUserID)
 	if err != nil {
 		return "", fmt.Errorf("get telegram user: %w", err)
 	}

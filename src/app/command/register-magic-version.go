@@ -11,26 +11,26 @@ import (
 	"github.com/truewebber/secretsantabot/domain/log"
 )
 
-type RegisterNewChatAndVersionHandler struct {
+type RegisterMagicVersion struct {
 	service storage.Storage
 }
 
-func NewRegisterNewChatAndVersionHandler(
+func NewRegisterMagicVersionHandler(
 	service storage.Storage,
 	logger log.Logger,
-) (*RegisterNewChatAndVersionHandler, error) {
+) (*RegisterMagicVersion, error) {
 	if service == nil || logger == nil {
 		return nil, errServiceIsNil
 	}
 
-	return &RegisterNewChatAndVersionHandler{service: service}, nil
+	return &RegisterMagicVersion{service: service}, nil
 }
 
-func MustNewRegisterNewChatAndVersionHandler(
+func MustNewRegisterMagicVersionHandler(
 	service storage.Storage,
 	logger log.Logger,
-) *RegisterNewChatAndVersionHandler {
-	h, err := NewRegisterNewChatAndVersionHandler(service, logger)
+) *RegisterMagicVersion {
+	h, err := NewRegisterMagicVersionHandler(service, logger)
 	if err != nil {
 		panic(err)
 	}
@@ -38,26 +38,18 @@ func MustNewRegisterNewChatAndVersionHandler(
 	return h
 }
 
-func (h *RegisterNewChatAndVersionHandler) Handle(appChat *types.Chat) error {
+func (h *RegisterMagicVersion) Handle(appChat *types.Chat) error {
 	if !appChat.IsGroup {
 		return apperrors.ErrRegisterLocalChatIsRestricted
 	}
 
 	chatToSave := types.ChatToDomain(appChat)
 
+	chatVersionToSave := &chat.MagicVersion{
+		Chat: chatToSave,
+	}
+
 	doErr := h.service.DoOperationOnTx(func(ctx context.Context, tx storage.Tx) error {
-		if err := tx.InsertPerson(ctx, chatToSave.Admin); err != nil {
-			return fmt.Errorf("insert person: %w", err)
-		}
-
-		if err := tx.InsertChat(ctx, chatToSave); err != nil {
-			return fmt.Errorf("insert chat: %w", err)
-		}
-
-		chatVersionToSave := &chat.MagicVersion{
-			Chat: chatToSave,
-		}
-
 		if err := tx.InsertNewMagicVersion(ctx, chatVersionToSave); err != nil {
 			return fmt.Errorf("insert new chat magic version: %w", err)
 		}

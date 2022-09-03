@@ -31,14 +31,14 @@ func MustNewEnrollHandler(service storage.Storage, logger log.Logger) *EnrollHan
 	return h
 }
 
-func (h *EnrollHandler) Handle(participant *types.Person) error {
+func (h *EnrollHandler) Handle(chat *types.Chat, participant *types.Person) error {
 	doErr := h.service.DoOperationOnTx(func(ctx context.Context, storageTx storage.Tx) error {
-		chat, err := storageTx.GetChatByTelegramID(ctx, participant.TelegramChatID)
+		chatToParticipate, err := storageTx.GetChatByTelegramID(ctx, chat.TelegramChatID)
 		if err != nil {
 			return fmt.Errorf("get chat by telegramID: %w", err)
 		}
 
-		version, err := storageTx.GetLatestMagicVersion(ctx, chat)
+		version, err := storageTx.GetLatestMagicVersion(ctx, chatToParticipate)
 		if err != nil {
 			return fmt.Errorf("get magic version by chat: %w", err)
 		}
@@ -61,8 +61,6 @@ func (h *EnrollHandler) Handle(participant *types.Person) error {
 
 func castParticipantToDomain(p *types.Person) *chatdomain.Person {
 	return &chatdomain.Person{
-		ID:             0,
 		TelegramUserID: p.TelegramUserID,
-		TelegramChatID: p.TelegramChatID,
 	}
 }

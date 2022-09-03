@@ -55,7 +55,12 @@ func (t *Bot) Enroll(message *tgbotapi.Message) error {
 		return fmt.Errorf("build person from message: %w", err)
 	}
 
-	if err := t.application.Commands.Enroll.Handle(person); err != nil {
+	chat, err := t.builder.buildChatFromMessage(message)
+	if err != nil {
+		return fmt.Errorf("build person from message: %w", err)
+	}
+
+	if err := t.application.Commands.Enroll.Handle(chat, person); err != nil {
 		return fmt.Errorf("handle enroll: %w", err)
 	}
 
@@ -94,7 +99,12 @@ func (t *Bot) List(message *tgbotapi.Message) error {
 		return fmt.Errorf("handle list of participants: %w", err)
 	}
 
-	replyMessage, err := t.builder.buildListOfParticipantsMessage(message.Chat, participants)
+	chat, err := t.builder.buildChatFromMessage(message)
+	if err != nil {
+		return fmt.Errorf("build person from message: %w", err)
+	}
+
+	replyMessage, err := t.builder.buildListOfParticipantsMessage(chat, participants)
 	if err != nil {
 		return fmt.Errorf("build list of participants message: %w", err)
 	}
@@ -116,12 +126,20 @@ func (t *Bot) My(message *tgbotapi.Message) error {
 		return fmt.Errorf("build person from message: %w", err)
 	}
 
+	chat, err := t.builder.buildChatFromMessage(message)
+	if err != nil {
+		return fmt.Errorf("build person from message: %w", err)
+	}
+
 	receiver, err := t.application.Queries.GetMyReceiver.Handle(giver)
 	if err != nil {
 		return fmt.Errorf("handle get receiver by giver: %w", err)
 	}
 
-	replyMessage, err := t.builder.buildMyReceiverMessage(giver.TelegramUserID, receiver)
+	//temp
+	receiver = giver
+
+	replyMessage, err := t.builder.buildMyReceiverMessage(chat, giver, receiver)
 	if err != nil {
 		return fmt.Errorf("build my receiver message: %w", err)
 	}
@@ -134,10 +152,10 @@ func (t *Bot) My(message *tgbotapi.Message) error {
 }
 
 const helpText = "/enroll - enroll the game\n" +
-	"/end - stop your enroll (only before magic starts)\n" +
+	"/disenroll - stop your enroll (only before magic starts)\n" +
 	"/list - list all enrolling people\n" +
 	"/magic - start the game (only admin)\n" +
-	"/my - SecretHelSanta will resend magic info for you (only in private chat wi me)\n" +
+	"/my - Secret Santa will resend magic info for you (only in private chat with me)\n" +
 	"/help - show this message\n" +
 	"/start - register new chat (don't work with private messages)\n"
 
@@ -152,7 +170,10 @@ func (t *Bot) Help(message *tgbotapi.Message) error {
 }
 
 const (
-	startText                         = "Dummy start text!"
+	startText = "Ho-ho-ho!\nWelcome guys and Merry Christmas 🎁\n\nTo start game, every " +
+		"one who wants to participate need to send message /enroll to the chat, also, you need " +
+		"to allow me to write to you in direct. Press @secrethellsantabot and press start or restart.\n" +
+		"After that, my inviter should begin the MAGIC (send message /magic)."
 	registerLocalChatIsRestrictedText = "Forbidden!"
 )
 
@@ -162,7 +183,7 @@ func (t *Bot) Start(message *tgbotapi.Message) error {
 		return fmt.Errorf("build chat from message: %w", buildErr)
 	}
 
-	handleErr := t.application.Commands.RegisterNewChat.Handle(chat)
+	handleErr := t.application.Commands.RegisterNewChatAndVersion.Handle(chat)
 
 	if errors.Is(handleErr, apperrors.ErrRegisterLocalChatIsRestricted) {
 		replyMessage := tgbotapi.NewMessage(message.Chat.ID, registerLocalChatIsRestrictedText)

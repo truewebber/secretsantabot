@@ -1,9 +1,9 @@
 package query
 
 import (
-	"github.com/truewebber/secretsantabot/internal/app/types"
-	"github.com/truewebber/secretsantabot/internal/domain/chat/storage"
-	"github.com/truewebber/secretsantabot/internal/domain/log"
+	"github.com/truewebber/secretsantabot/app/types"
+	"github.com/truewebber/secretsantabot/domain/chat/storage"
+	"github.com/truewebber/secretsantabot/domain/log"
 )
 
 type ListHandler struct {

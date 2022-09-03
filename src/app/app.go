@@ -12,10 +12,11 @@ type (
 	}
 
 	Commands struct {
-		RegisterNewChat *command.RegisterNewChatHandler
-		Enroll          *command.EnrollHandler
-		DisEnroll       *command.DisEnrollHandler
-		Magic           *command.MagicHandler
+		RegisterNewChatAndVersion *command.RegisterNewChatAndVersionHandler
+		RegisterMagicVersion      *command.RegisterMagicVersion
+		Enroll                    *command.EnrollHandler
+		DisEnroll                 *command.DisEnrollHandler
+		Magic                     *command.MagicHandler
 	}
 
 	Queries struct {

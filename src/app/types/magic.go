@@ -1,41 +1,22 @@
 package types
 
-import (
-	"errors"
-	"fmt"
-
-	"github.com/truewebber/secretsantabot/domain/chat"
-)
+import "github.com/truewebber/secretsantabot/domain/chat"
 
 type (
 	Magic struct {
-		Data   []GiverReceiverPair
-		Status MagicStatus
+		Data []GiverReceiverPair
 	}
 
 	GiverReceiverPair struct {
 		Giver    *Person
 		Receiver *Person
 	}
-
-	MagicStatus uint8
 )
 
-const (
-	OpenMagicStatus MagicStatus = iota + 1
-	ClosedMagicStatus
-)
-
-func MagicToDomain(magic Magic) (chat.Magic, error) {
-	status, err := magicStatusToDomain(magic.Status)
-	if err != nil {
-		return chat.Magic{}, fmt.Errorf("magic status to domain: %w", err)
+func MagicToDomain(magic *Magic) *chat.Magic {
+	return &chat.Magic{
+		Data: dataToDomain(magic.Data),
 	}
-
-	return chat.Magic{
-		Data:   dataToDomain(magic.Data),
-		Status: status,
-	}, nil
 }
 
 func dataToDomain(data []GiverReceiverPair) []chat.GiverReceiverPair {
@@ -49,17 +30,4 @@ func dataToDomain(data []GiverReceiverPair) []chat.GiverReceiverPair {
 	}
 
 	return chatData
-}
-
-var errUnknownMagicStatus = errors.New("unknown magic status")
-
-func magicStatusToDomain(status MagicStatus) (chat.MagicStatus, error) {
-	switch status {
-	case OpenMagicStatus:
-		return chat.OpenMagicStatus, nil
-	case ClosedMagicStatus:
-		return chat.ClosedMagicStatus, nil
-	}
-
-	return 0, errUnknownMagicStatus
 }

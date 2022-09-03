@@ -2,8 +2,7 @@ package chat
 
 type (
 	Magic struct {
-		Data   []GiverReceiverPair
-		Status MagicStatus
+		Data []GiverReceiverPair
 	}
 
 	GiverReceiverPair struct {
@@ -12,16 +11,7 @@ type (
 	}
 
 	MagicVersion struct {
-		Chat    *Chat
-		ID      uint64
-		Version uint8
-		Status  MagicStatus
+		Chat *Chat
+		ID   uint64
 	}
-)
-
-type MagicStatus uint8
-
-const (
-	OpenMagicStatus MagicStatus = iota + 1
-	ClosedMagicStatus
 )
