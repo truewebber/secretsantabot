@@ -2,9 +2,10 @@ package telegram
 
 import (
 	"fmt"
-	"github.com/truewebber/secretsantabot/app/types"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+
+	"github.com/truewebber/secretsantabot/app/types"
 )
 
 const (
@@ -151,13 +152,13 @@ func (t *Bot) My(message *tgbotapi.Message) error {
 		return fmt.Errorf("build person from message: %w", err)
 	}
 
-	receiver, err := t.application.Queries.GetMyReceiver.Handle(chat, giver)
-	if err != nil {
-		return fmt.Errorf("handle get receiver by giver: %w", err)
+	_, handleErr := t.application.Queries.GetMyReceiver.Handle(chat, giver)
+	if handleErr != nil {
+		return fmt.Errorf("handle get receiver by giver: %w", handleErr)
 	}
 
-	//temp
-	receiver = giver
+	// temp
+	receiver := giver
 
 	replyMessage, err := t.builder.buildMyReceiverMessage(chat, giver, receiver)
 	if err != nil {

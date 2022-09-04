@@ -83,7 +83,7 @@ VALUES ($1, false) RETURNING id;`
 
 func (s *StorageTx) InsertNewMagicVersion(ctx context.Context, version *chatdomain.MagicVersion) error {
 	if err := s.tx.QueryRow(ctx, insertMagicVersionQuery, version.Chat.TelegramChatID).Scan(&version.ID); err != nil {
-		return fmt.Errorf("exec insert magic versoin: %w", err)
+		return fmt.Errorf("exec insert magic version: %w", err)
 	}
 
 	return nil
@@ -107,7 +107,7 @@ func (s *StorageTx) GetLatestMagicVersion(
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("exec select latest magic versoin: %w", err)
+		return nil, fmt.Errorf("exec select latest magic version: %w", err)
 	}
 
 	return version, nil
@@ -117,11 +117,19 @@ func (s *StorageTx) ListParticipants(ctx context.Context, v *chatdomain.MagicVer
 	return []chatdomain.Person{}, nil
 }
 
-func (s *StorageTx) InsertParticipant(ctx context.Context, v *chatdomain.MagicVersion, person *chatdomain.Person) error {
+func (s *StorageTx) InsertParticipant(
+	ctx context.Context,
+	version *chatdomain.MagicVersion,
+	person *chatdomain.Person,
+) error {
 	return nil
 }
 
-func (s *StorageTx) DeleteParticipant(ctx context.Context, v *chatdomain.MagicVersion, person *chatdomain.Person) error {
+func (s *StorageTx) DeleteParticipant(
+	ctx context.Context,
+	version *chatdomain.MagicVersion,
+	person *chatdomain.Person,
+) error {
 	return nil
 }
 
