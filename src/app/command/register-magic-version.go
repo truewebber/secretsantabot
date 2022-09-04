@@ -39,8 +39,8 @@ func MustNewRegisterMagicVersionHandler(
 }
 
 func (h *RegisterMagicVersion) Handle(appChat *types.Chat) error {
-	if !appChat.IsGroup {
-		return apperrors.ErrRegisterLocalChatIsRestricted
+	if appChat.IsNotAGroup() {
+		return apperrors.ErrChatTypeIsUnsupported
 	}
 
 	chatToSave := types.ChatToDomain(appChat)

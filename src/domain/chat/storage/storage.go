@@ -18,9 +18,6 @@ type (
 		InsertChat(context.Context, *chat.Chat) error
 		GetChatByTelegramID(context.Context, int64) (*chat.Chat, error)
 
-		InsertPerson(context.Context, *chat.Person) error
-		GetPersonByTelegramID(context.Context, int64) (*chat.Person, error)
-
 		InsertNewMagicVersion(context.Context, *chat.MagicVersion) error
 		GetLatestMagicVersion(context.Context, *chat.Chat) (*chat.MagicVersion, error)
 

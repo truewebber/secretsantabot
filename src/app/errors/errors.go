@@ -3,6 +3,7 @@ package errors
 import "errors"
 
 var (
-	ErrRegisterLocalChatIsRestricted = errors.New("register local chat is restricted")
-	ErrNotFound                      = errors.New("not found")
+	ErrChatTypeIsUnsupported = errors.New("chat type is unsupported")
+	ErrChatIsPrivate         = errors.New("chat is private")
+	ErrForbidden             = errors.New("forbidden")
 )

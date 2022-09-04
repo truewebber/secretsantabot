@@ -1,19 +1,10 @@
-CREATE TABLE IF NOT EXISTS users
-(
-    id         BIGINT    NOT NULL PRIMARY KEY,
-    deleted    BOOLEAN   NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
-    updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp
-);
-
 CREATE TABLE IF NOT EXISTS chats
 (
     id            BIGINT    NOT NULL PRIMARY KEY,
     admin_user_id BIGINT    NOT NULL,
     deleted       BOOLEAN   NOT NULL,
     created_at    TIMESTAMP NOT NULL DEFAULT current_timestamp,
-    updated_at    TIMESTAMP NOT NULL DEFAULT current_timestamp,
-    FOREIGN KEY (admin_user_id) REFERENCES users (id)
+    updated_at    TIMESTAMP NOT NULL DEFAULT current_timestamp
 );
 CREATE INDEX IF NOT EXISTS chats__admin_user_id__idx ON chats (admin_user_id);
 
@@ -32,15 +23,14 @@ CREATE TABLE IF NOT EXISTS magic_participants
 (
     id                    BIGSERIAL NOT NULL PRIMARY KEY,
     magic_chat_history_id BIGINT    NOT NULL,
-    participant_id        BIGINT    NOT NULL,
+    participant_user_id   BIGINT    NOT NULL,
     deleted               BOOLEAN   NOT NULL,
     created_at            TIMESTAMP NOT NULL DEFAULT current_timestamp,
     updated_at            TIMESTAMP NOT NULL DEFAULT current_timestamp,
-    FOREIGN KEY (magic_chat_history_id) REFERENCES magic_chat_history (id),
-    FOREIGN KEY (participant_id) REFERENCES users (id)
+    FOREIGN KEY (magic_chat_history_id) REFERENCES magic_chat_history (id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS magic_participants__chat_id__participant_id__uidx
-    ON magic_participants (magic_chat_history_id, participant_id);
+    ON magic_participants (magic_chat_history_id, participant_user_id);
 
 CREATE TABLE IF NOT EXISTS magic_results
 (

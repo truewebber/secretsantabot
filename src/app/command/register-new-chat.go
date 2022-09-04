@@ -39,17 +39,17 @@ func MustNewRegisterNewChatAndVersionHandler(
 }
 
 func (h *RegisterNewChatAndVersionHandler) Handle(appChat *types.Chat) error {
-	if !appChat.IsGroup {
-		return apperrors.ErrRegisterLocalChatIsRestricted
+	if appChat.IsPrivate() {
+		return apperrors.ErrChatIsPrivate
+	}
+
+	if appChat.IsNotAGroup() {
+		return apperrors.ErrChatTypeIsUnsupported
 	}
 
 	chatToSave := types.ChatToDomain(appChat)
 
 	doErr := h.service.DoOperationOnTx(func(ctx context.Context, tx storage.Tx) error {
-		if err := tx.InsertPerson(ctx, chatToSave.Admin); err != nil {
-			return fmt.Errorf("insert person: %w", err)
-		}
-
 		if err := tx.InsertChat(ctx, chatToSave); err != nil {
 			return fmt.Errorf("insert chat: %w", err)
 		}

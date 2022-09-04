@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	apperrors "github.com/truewebber/secretsantabot/app/errors"
 	"github.com/truewebber/secretsantabot/app/types"
 	chatdomain "github.com/truewebber/secretsantabot/domain/chat"
 	"github.com/truewebber/secretsantabot/domain/chat/storage"
@@ -31,9 +32,13 @@ func MustNewEnrollHandler(service storage.Storage, logger log.Logger) *EnrollHan
 	return h
 }
 
-func (h *EnrollHandler) Handle(chat *types.Chat, participant *types.Person) error {
+func (h *EnrollHandler) Handle(appChat *types.Chat, participant *types.Person) error {
+	if appChat.IsNotAGroup() {
+		return apperrors.ErrChatTypeIsUnsupported
+	}
+
 	doErr := h.service.DoOperationOnTx(func(ctx context.Context, storageTx storage.Tx) error {
-		chatToParticipate, err := storageTx.GetChatByTelegramID(ctx, chat.TelegramChatID)
+		chatToParticipate, err := storageTx.GetChatByTelegramID(ctx, appChat.TelegramChatID)
 		if err != nil {
 			return fmt.Errorf("get chat by telegramID: %w", err)
 		}

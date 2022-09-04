@@ -1,6 +1,7 @@
 package command
 
 import (
+	apperrors "github.com/truewebber/secretsantabot/app/errors"
 	"github.com/truewebber/secretsantabot/app/types"
 	"github.com/truewebber/secretsantabot/domain/chat/storage"
 	"github.com/truewebber/secretsantabot/domain/log"
@@ -27,6 +28,18 @@ func MustNewMagicHandler(service storage.Storage, logger log.Logger) *MagicHandl
 	return h
 }
 
-func (h *MagicHandler) Handle(notifyPersonFn func(p *types.Person) error) error {
+func (h *MagicHandler) Handle(
+	appChat *types.Chat,
+	caller *types.Person,
+	notifyPersonFn func(p *types.Person) error,
+) error {
+	if appChat.IsNotAGroup() {
+		return apperrors.ErrChatTypeIsUnsupported
+	}
+
+	if appChat.Admin.TelegramUserID != caller.TelegramUserID {
+		return apperrors.ErrForbidden
+	}
+
 	return nil
 }

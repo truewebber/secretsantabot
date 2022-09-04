@@ -6,7 +6,27 @@ type Chat struct {
 	Admin          *Person
 	Participants   []Person
 	TelegramChatID int64
-	IsGroup        bool
+	ChatType       ChatType
+}
+
+type ChatType uint8
+
+const (
+	ChatTypeUnsupported ChatType = iota
+	ChatTypeGroup
+	ChatTypePrivate
+)
+
+func (c *Chat) IsNotAGroup() bool {
+	return c.ChatType != ChatTypeGroup
+}
+
+func (c *Chat) IsPrivate() bool {
+	return c.ChatType == ChatTypePrivate
+}
+
+func (c *Chat) IsUnsupported() bool {
+	return c.ChatType == ChatTypeUnsupported
 }
 
 func ChatToDomain(c *Chat) *chat.Chat {

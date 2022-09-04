@@ -19,7 +19,7 @@ func newBuilder(bot *tgbotapi.BotAPI) builder {
 	}
 }
 
-func (b builder) getTelegramUser(chatID, userID int64) (*tgbotapi.User, error) {
+func (b *builder) getTelegramUser(chatID, userID int64) (*tgbotapi.User, error) {
 	member, err := b.bot.GetChatMember(tgbotapi.ChatConfigWithUser{ChatID: chatID, UserID: int(userID)})
 	if err != nil {
 		return nil, fmt.Errorf("get chat member: %w", err)
@@ -33,7 +33,7 @@ var (
 	errUserIsNil = errors.New("user is nil")
 )
 
-func (builder) buildPersonFromMessage(message *tgbotapi.Message) (*types.Person, error) {
+func (*builder) buildPersonFromMessage(message *tgbotapi.Message) (*types.Person, error) {
 	if message.From == nil {
 		return nil, errUserIsNil
 	}
@@ -47,22 +47,34 @@ func (builder) buildPersonFromMessage(message *tgbotapi.Message) (*types.Person,
 	}, nil
 }
 
-func (b builder) buildChatFromMessage(message *tgbotapi.Message) (*types.Chat, error) {
+func (b *builder) buildChatFromMessage(message *tgbotapi.Message) (*types.Chat, error) {
 	person, err := b.buildPersonFromMessage(message)
 	if err != nil {
 		return nil, fmt.Errorf("build person from message: %w", err)
 	}
 
 	return &types.Chat{
-		IsGroup:        message.Chat.IsGroup() || message.Chat.IsSuperGroup(),
+		ChatType:       b.buildChatType(message.Chat),
 		TelegramChatID: message.Chat.ID,
 		Admin:          person,
 	}, nil
 }
 
+func (b *builder) buildChatType(chat *tgbotapi.Chat) types.ChatType {
+	if chat.IsGroup() || chat.IsSuperGroup() {
+		return types.ChatTypeGroup
+	}
+
+	if chat.IsPrivate() {
+		return types.ChatTypePrivate
+	}
+
+	return types.ChatTypeUnsupported
+}
+
 const enrollSuccessMessageTemplate = "Congratulations!\n%s %s is having part in Secret Santa."
 
-func (builder) buildEnrollSuccessMessage(from *tgbotapi.User, chat *tgbotapi.Chat) *tgbotapi.MessageConfig {
+func (*builder) buildEnrollSuccessMessage(from *tgbotapi.User, chat *tgbotapi.Chat) *tgbotapi.MessageConfig {
 	text := fmt.Sprintf(enrollSuccessMessageTemplate, from.FirstName, from.LastName)
 
 	replyMessage := tgbotapi.NewMessage(chat.ID, text)
@@ -72,7 +84,7 @@ func (builder) buildEnrollSuccessMessage(from *tgbotapi.User, chat *tgbotapi.Cha
 
 const disEnrollSuccessMessageTemplate = "Sad to see you leaving =(\n%s %s is not in game from now."
 
-func (builder) buildDisEnrollSuccessMessage(from *tgbotapi.User, chat *tgbotapi.Chat) *tgbotapi.MessageConfig {
+func (*builder) buildDisEnrollSuccessMessage(from *tgbotapi.User, chat *tgbotapi.Chat) *tgbotapi.MessageConfig {
 	text := fmt.Sprintf(disEnrollSuccessMessageTemplate, from.FirstName, from.LastName)
 
 	replyMessage := tgbotapi.NewMessage(chat.ID, text)
@@ -80,7 +92,7 @@ func (builder) buildDisEnrollSuccessMessage(from *tgbotapi.User, chat *tgbotapi.
 	return &replyMessage
 }
 
-func (b builder) buildListOfParticipantsMessage(chat *types.Chat, participants []types.Person,
+func (b *builder) buildListOfParticipantsMessage(chat *types.Chat, participants []types.Person,
 ) (*tgbotapi.MessageConfig, error) {
 	text, err := b.listOfParticipantsToText(chat, participants)
 	if err != nil {
@@ -94,7 +106,7 @@ func (b builder) buildListOfParticipantsMessage(chat *types.Chat, participants [
 
 const ListIsEmptyMessage = "No one person has enroll yet."
 
-func (b builder) listOfParticipantsToText(chat *types.Chat, participants []types.Person) (string, error) {
+func (b *builder) listOfParticipantsToText(chat *types.Chat, participants []types.Person) (string, error) {
 	if len(participants) == 0 {
 		return ListIsEmptyMessage, nil
 	}
@@ -121,7 +133,7 @@ func (b builder) listOfParticipantsToText(chat *types.Chat, participants []types
 	return text, nil
 }
 
-func (b builder) buildMyReceiverMessage(
+func (b *builder) buildMyReceiverMessage(
 	chat *types.Chat,
 	recipient, receiver *types.Person,
 ) (*tgbotapi.MessageConfig, error) {
@@ -137,7 +149,7 @@ func (b builder) buildMyReceiverMessage(
 
 const getMyReceiverMessageTemplate = "Hey! Your target is `%s %s%s`"
 
-func (b builder) getMyReceiverToText(chat *types.Chat, receiver *types.Person) (string, error) {
+func (b *builder) getMyReceiverToText(chat *types.Chat, receiver *types.Person) (string, error) {
 	user, err := b.getTelegramUser(chat.TelegramChatID, receiver.TelegramUserID)
 	if err != nil {
 		return "", fmt.Errorf("get telegram user: %w", err)
