@@ -21,7 +21,7 @@ stages:
   tags:
     - docker
   image:
-    name: golangci/golangci-lint:v1.42
+    name: golangci/golangci-lint:v1.49.0
     entrypoint: [ "" ]
   script:
     - cd ${CI_GOLANG_APP_DIR}
@@ -43,7 +43,7 @@ inspect_golang:
     - .go-cache
     - .inspect_go_code
   variables: &golang_job_settings_env_vars
-    CI_GOLANG_APP_DIR: "./"
+    CI_GOLANG_APP_DIR: "src"
   only:
     - merge_requests
     - master
