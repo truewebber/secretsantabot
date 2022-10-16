@@ -27,7 +27,7 @@ func NewConfig(chatService ChatService, logger log.Logger) *Config {
 }
 
 func MustNewApplication(cfg *Config) *app.Application {
-	chatService := postgres.MustNewPostgres(cfg.ChatService.PostgresURI)
+	chatService := postgres.MustNewPGX(cfg.ChatService.PostgresURI)
 
 	return &app.Application{
 		Commands: app.Commands{

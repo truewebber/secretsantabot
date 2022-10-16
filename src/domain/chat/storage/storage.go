@@ -9,23 +9,24 @@ import (
 
 var ErrNotFound = errors.New("not found")
 
-type (
-	Storage interface {
-		DoOperationOnTx(context.Context, func(context.Context, Tx) error) error
-	}
+type Storage interface {
+	DoOperationOnTx(context.Context, func(context.Context, Tx) error) error
+	DoLockedOperationOnTx(ctx context.Context, lockID int64, operation func(context.Context, Tx) error) error
+}
 
-	Tx interface {
-		InsertChat(context.Context, *chat.Chat) error
-		GetChatByTelegramID(context.Context, int64) (*chat.Chat, error)
+type Tx interface {
+	LockTx(ctx context.Context, lockID int64) error
 
-		InsertNewMagicVersion(context.Context, *chat.MagicVersion) error
-		GetLatestMagicVersion(context.Context, *chat.Chat) (*chat.MagicVersion, error)
+	InsertChat(context.Context, *chat.Chat) error
+	GetChatByTelegramID(context.Context, int64) (*chat.Chat, error)
 
-		InsertParticipant(context.Context, *chat.MagicVersion, *chat.Person) error
-		DeleteParticipant(context.Context, *chat.MagicVersion, *chat.Person) error
-		ListParticipants(context.Context, *chat.MagicVersion) ([]chat.Person, error)
+	InsertNewMagicVersion(context.Context, *chat.MagicVersion) error
+	GetLatestMagicVersion(context.Context, *chat.Chat) (*chat.MagicVersion, error)
 
-		InsertMagic(context.Context, *chat.MagicVersion, chat.Magic) error
-		GetMagic(context.Context, *chat.MagicVersion) (chat.Magic, error)
-	}
-)
+	InsertParticipant(context.Context, *chat.MagicVersion, *chat.Person) error
+	DeleteParticipant(context.Context, *chat.MagicVersion, *chat.Person) error
+	ListParticipants(context.Context, *chat.MagicVersion) ([]chat.Person, error)
+
+	InsertMagic(context.Context, *chat.MagicVersion, chat.Magic) error
+	GetMagic(context.Context, *chat.MagicVersion) (chat.Magic, error)
+}

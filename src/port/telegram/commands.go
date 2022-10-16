@@ -139,6 +139,10 @@ func (t *Bot) Magic(ctx context.Context, message *tgbotapi.Message) error {
 		return fmt.Errorf("handle magic: %w", handleErr)
 	}
 
+	// reply message
+
+	// send message
+
 	return nil
 }
 

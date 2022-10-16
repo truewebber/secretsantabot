@@ -11,12 +11,12 @@ import (
 	"github.com/truewebber/secretsantabot/domain/chat/storage"
 )
 
-type StorageTx struct {
+type pgxTx struct {
 	tx pgx.Tx
 }
 
-func newStorageTx(tx pgx.Tx) *StorageTx {
-	return &StorageTx{tx: tx}
+func newStorageTx(tx pgx.Tx) *pgxTx {
+	return &pgxTx{tx: tx}
 }
 
 const (
@@ -27,7 +27,7 @@ const (
 	selectDeletedChatQuery = "SELECT admin_user_id, deleted FROM chats WHERE id=$1;"
 )
 
-func (s *StorageTx) InsertChat(ctx context.Context, chat *chatdomain.Chat) error {
+func (s *pgxTx) InsertChat(ctx context.Context, chat *chatdomain.Chat) error {
 	var deleted bool
 
 	selectErr := s.tx.QueryRow(ctx, selectDeletedChatQuery, chat.TelegramChatID).
@@ -57,7 +57,7 @@ func (s *StorageTx) InsertChat(ctx context.Context, chat *chatdomain.Chat) error
 
 const selectChatByIDQuery = "SELECT admin_user_id FROM chats WHERE id=$1 AND deleted=false;"
 
-func (s *StorageTx) GetChatByTelegramID(ctx context.Context, id int64) (*chatdomain.Chat, error) {
+func (s *pgxTx) GetChatByTelegramID(ctx context.Context, id int64) (*chatdomain.Chat, error) {
 	var adminUserID int64
 
 	err := s.tx.QueryRow(ctx, selectChatByIDQuery, id).Scan(&adminUserID)
@@ -81,7 +81,7 @@ func (s *StorageTx) GetChatByTelegramID(ctx context.Context, id int64) (*chatdom
 const insertMagicVersionQuery = `INSERT INTO magic_chat_history (chat_id, deleted)
 VALUES ($1, false) RETURNING id;`
 
-func (s *StorageTx) InsertNewMagicVersion(ctx context.Context, version *chatdomain.MagicVersion) error {
+func (s *pgxTx) InsertNewMagicVersion(ctx context.Context, version *chatdomain.MagicVersion) error {
 	if err := s.tx.QueryRow(ctx, insertMagicVersionQuery, version.Chat.TelegramChatID).Scan(&version.ID); err != nil {
 		return fmt.Errorf("exec insert magic version: %w", err)
 	}
@@ -92,7 +92,7 @@ func (s *StorageTx) InsertNewMagicVersion(ctx context.Context, version *chatdoma
 const selectLatestMagicVersionQuery = `SELECT id FROM magic_chat_history WHERE chat_id=$1 AND deleted=false
 ORDER BY id DESC LIMIT 1;`
 
-func (s *StorageTx) GetLatestMagicVersion(
+func (s *pgxTx) GetLatestMagicVersion(
 	ctx context.Context,
 	chat *chatdomain.Chat,
 ) (*chatdomain.MagicVersion, error) {
@@ -116,7 +116,7 @@ func (s *StorageTx) GetLatestMagicVersion(
 const selectEnrolledParticipantsQuery = `SELECT participant_user_id FROM magic_participants
 WHERE magic_chat_history_id=$1 AND deleted IS FALSE;`
 
-func (s *StorageTx) ListParticipants(ctx context.Context, v *chatdomain.MagicVersion) ([]chatdomain.Person, error) {
+func (s *pgxTx) ListParticipants(ctx context.Context, v *chatdomain.MagicVersion) ([]chatdomain.Person, error) {
 	rows, err := s.tx.Query(ctx, selectEnrolledParticipantsQuery, v.ID)
 	if err != nil {
 		return nil, fmt.Errorf("query enrolled participants: %w", err)
@@ -153,7 +153,7 @@ VALUES ($1, $2, false) ON CONFLICT DO NOTHING;`
 WHERE magic_chat_history_id=$1 AND participant_user_id=$2;`
 )
 
-func (s *StorageTx) InsertParticipant(
+func (s *pgxTx) InsertParticipant(
 	ctx context.Context,
 	version *chatdomain.MagicVersion,
 	person *chatdomain.Person,
@@ -192,7 +192,7 @@ var errInvalidAmountRowsAffected = errors.New("invalid amount rows affected")
 const deleteParticipantQuery = `UPDATE magic_participants SET deleted=true
 WHERE magic_chat_history_id=$1 AND participant_user_id=$2;`
 
-func (s *StorageTx) DeleteParticipant(
+func (s *pgxTx) DeleteParticipant(
 	ctx context.Context,
 	version *chatdomain.MagicVersion,
 	person *chatdomain.Person,
@@ -209,12 +209,80 @@ func (s *StorageTx) DeleteParticipant(
 	return nil
 }
 
-func (s *StorageTx) InsertMagic(ctx context.Context, v *chatdomain.MagicVersion, magic chatdomain.Magic) error {
+func (s *pgxTx) InsertMagic(ctx context.Context, v *chatdomain.MagicVersion, magic chatdomain.Magic) error {
+	for i := range magic.Data {
+		if err := insertMagicPairOnTx(ctx, s.tx, v, magic.Data[i]); err != nil {
+			return fmt.Errorf("insert magic pair on tx: %w", err)
+		}
+	}
+
 	return nil
 }
 
-func (s *StorageTx) GetMagic(ctx context.Context, v *chatdomain.MagicVersion) (chatdomain.Magic, error) {
+const insertMagicPairQuery = `INSERT INTO magic_results 
+(magic_chat_history_id, participant_giver_id, participant_receiver_id, deleted) 
+VALUES ($1, $2, $3, false);`
+
+func insertMagicPairOnTx(
+	ctx context.Context,
+	tx pgx.Tx,
+	v *chatdomain.MagicVersion,
+	pair chatdomain.GiverReceiverPair,
+) error {
+	tag, err := tx.Exec(ctx, insertMagicPairQuery, v.ID, pair.Giver.TelegramUserID, pair.Receiver.TelegramUserID)
+	if err != nil {
+		return fmt.Errorf("insert magic pair: %w", err)
+	}
+
+	if tag.RowsAffected() != 1 {
+		return fmt.Errorf("%w on insert: %v", errInvalidAmountRowsAffected, tag.RowsAffected())
+	}
+
+	return nil
+}
+
+const selectMagicPairQuery = `SELECT participant_giver_id, participant_receiver_id FROM magic_results
+WHERE magic_chat_history_id=$1 AND deleted IS FALSE;`
+
+func (s *pgxTx) GetMagic(ctx context.Context, v *chatdomain.MagicVersion) (chatdomain.Magic, error) {
+	rows, err := s.tx.Query(ctx, selectMagicPairQuery, v.ID)
+	if err != nil {
+		return chatdomain.Magic{}, fmt.Errorf("query select magic pair: %w", err)
+	}
+
+	defer rows.Close()
+
+	var pairs []chatdomain.GiverReceiverPair
+
+	for rows.Next() {
+		var pair chatdomain.GiverReceiverPair
+
+		if err := rows.Scan(&pair.Giver.TelegramUserID, &pair.Receiver.TelegramUserID); err != nil {
+			return chatdomain.Magic{}, fmt.Errorf("scan row: %w", err)
+		}
+
+		pairs = append(pairs, pair)
+	}
+
+	if err := rows.Err(); err != nil {
+		return chatdomain.Magic{}, fmt.Errorf("rows: %w", err)
+	}
+
+	if len(pairs) == 0 {
+		return chatdomain.Magic{}, storage.ErrNotFound
+	}
+
 	return chatdomain.Magic{
 		Data: nil,
 	}, nil
+}
+
+const lockQuery = "SELECT pg_advisory_xact_lock($1);"
+
+func (s *pgxTx) LockTx(ctx context.Context, lockID int64) error {
+	if _, err := s.tx.Exec(ctx, lockQuery, lockID); err != nil {
+		return fmt.Errorf("exec lock query: %w", err)
+	}
+
+	return nil
 }

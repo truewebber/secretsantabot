@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"fmt"
 
 	apperrors "github.com/truewebber/secretsantabot/app/errors"
 	"github.com/truewebber/secretsantabot/app/types"
@@ -42,6 +43,16 @@ func (h *MagicHandler) Handle(
 
 	if appChat.Admin.TelegramUserID != caller.TelegramUserID {
 		return apperrors.ErrForbidden
+	}
+
+	doErr := h.service.DoLockedOperationOnTx(ctx, appChat.Admin.TelegramUserID,
+		func(ctx context.Context, tx storage.Tx) error {
+			return nil
+		},
+	)
+
+	if doErr != nil {
+		return fmt.Errorf("do locked operation on tx: %w", doErr)
 	}
 
 	return nil
