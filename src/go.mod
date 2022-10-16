@@ -2,6 +2,8 @@ module github.com/truewebber/secretsantabot
 
 go 1.19
 
+// try `go get -u gopkg.in/telebot.v3`
+
 require (
 	github.com/Netflix/go-env v0.0.0-20220526054621-78278af1949d
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible

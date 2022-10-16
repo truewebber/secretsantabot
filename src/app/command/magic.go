@@ -1,6 +1,8 @@
 package command
 
 import (
+	"context"
+
 	apperrors "github.com/truewebber/secretsantabot/app/errors"
 	"github.com/truewebber/secretsantabot/app/types"
 	"github.com/truewebber/secretsantabot/domain/chat/storage"
@@ -29,6 +31,7 @@ func MustNewMagicHandler(service storage.Storage, logger log.Logger) *MagicHandl
 }
 
 func (h *MagicHandler) Handle(
+	ctx context.Context,
 	appChat *types.Chat,
 	caller *types.Person,
 	notifyPersonFn func(p *types.Person) error,

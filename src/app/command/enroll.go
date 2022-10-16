@@ -32,25 +32,25 @@ func MustNewEnrollHandler(service storage.Storage, logger log.Logger) *EnrollHan
 	return h
 }
 
-func (h *EnrollHandler) Handle(appChat *types.Chat, participant *types.Person) error {
+func (h *EnrollHandler) Handle(ctx context.Context, appChat *types.Chat, participant *types.Person) error {
 	if appChat.IsNotAGroup() {
 		return apperrors.ErrChatTypeIsUnsupported
 	}
 
-	doErr := h.service.DoOperationOnTx(func(ctx context.Context, storageTx storage.Tx) error {
-		chatToParticipate, err := storageTx.GetChatByTelegramID(ctx, appChat.TelegramChatID)
+	doErr := h.service.DoOperationOnTx(ctx, func(opCtx context.Context, storageTx storage.Tx) error {
+		chatToParticipate, err := storageTx.GetChatByTelegramID(opCtx, appChat.TelegramChatID)
 		if err != nil {
 			return fmt.Errorf("get chat by telegramID: %w", err)
 		}
 
-		version, err := storageTx.GetLatestMagicVersion(ctx, chatToParticipate)
+		version, err := storageTx.GetLatestMagicVersion(opCtx, chatToParticipate)
 		if err != nil {
 			return fmt.Errorf("get magic version by chat: %w", err)
 		}
 
 		participantToSave := castParticipantToDomain(participant)
 
-		if err := storageTx.InsertParticipant(ctx, version, participantToSave); err != nil {
+		if err := storageTx.InsertParticipant(opCtx, version, participantToSave); err != nil {
 			return fmt.Errorf("insert new participant: %w", err)
 		}
 

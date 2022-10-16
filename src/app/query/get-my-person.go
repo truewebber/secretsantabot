@@ -1,6 +1,8 @@
 package query
 
 import (
+	"context"
+
 	apperrors "github.com/truewebber/secretsantabot/app/errors"
 	"github.com/truewebber/secretsantabot/app/types"
 	"github.com/truewebber/secretsantabot/domain/chat/storage"
@@ -28,7 +30,11 @@ func MustNewGetMyReceiverHandler(service storage.Storage, logger log.Logger) *Ge
 	return h
 }
 
-func (h *GetMyReceiverHandler) Handle(appChat *types.Chat, giver *types.Person) (*types.Person, error) {
+func (h *GetMyReceiverHandler) Handle(
+	ctx context.Context,
+	appChat *types.Chat,
+	giver *types.Person,
+) (*types.Person, error) {
 	if appChat.IsUnsupported() {
 		return nil, apperrors.ErrChatTypeIsUnsupported
 	}

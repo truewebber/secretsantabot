@@ -76,18 +76,18 @@ func (t *Bot) processUpdates(ctx context.Context, updates tgbotapi.UpdatesChanne
 				return
 			}
 
-			t.processOneUpdate(&u)
+			t.processOneUpdate(ctx, &u)
 		}
 	}
 }
 
-func (t *Bot) processOneUpdate(update *tgbotapi.Update) {
+func (t *Bot) processOneUpdate(ctx context.Context, update *tgbotapi.Update) {
 	message := messageFromUpdate(update)
 	if message == nil {
 		return
 	}
 
-	t.processMessage(message)
+	t.processMessage(ctx, message)
 }
 
 func messageFromUpdate(update *tgbotapi.Update) *tgbotapi.Message {
@@ -102,13 +102,13 @@ func messageFromUpdate(update *tgbotapi.Update) *tgbotapi.Message {
 	return nil
 }
 
-func (t *Bot) processMessage(message *tgbotapi.Message) {
+func (t *Bot) processMessage(ctx context.Context, message *tgbotapi.Message) {
 	command := t.getCommandFromMessage(message)
 	if command == "" {
 		return
 	}
 
-	t.processCommand(command, message)
+	t.processCommand(ctx, command, message)
 }
 
 func (t *Bot) getCommandFromMessage(message *tgbotapi.Message) string {

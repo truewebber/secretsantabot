@@ -11,7 +11,7 @@ var ErrNotFound = errors.New("not found")
 
 type (
 	Storage interface {
-		DoOperationOnTx(func(context.Context, Tx) error) error
+		DoOperationOnTx(context.Context, func(context.Context, Tx) error) error
 	}
 
 	Tx interface {

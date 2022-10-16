@@ -38,7 +38,7 @@ func MustNewRegisterMagicVersionHandler(
 	return h
 }
 
-func (h *RegisterMagicVersion) Handle(appChat *types.Chat) error {
+func (h *RegisterMagicVersion) Handle(ctx context.Context, appChat *types.Chat) error {
 	if appChat.IsNotAGroup() {
 		return apperrors.ErrChatTypeIsUnsupported
 	}
@@ -49,8 +49,8 @@ func (h *RegisterMagicVersion) Handle(appChat *types.Chat) error {
 		Chat: chatToSave,
 	}
 
-	doErr := h.service.DoOperationOnTx(func(ctx context.Context, tx storage.Tx) error {
-		if err := tx.InsertNewMagicVersion(ctx, chatVersionToSave); err != nil {
+	doErr := h.service.DoOperationOnTx(ctx, func(opCtx context.Context, tx storage.Tx) error {
+		if err := tx.InsertNewMagicVersion(opCtx, chatVersionToSave); err != nil {
 			return fmt.Errorf("insert new chat magic version: %w", err)
 		}
 

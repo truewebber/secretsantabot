@@ -38,7 +38,7 @@ func MustNewRegisterNewChatAndVersionHandler(
 	return h
 }
 
-func (h *RegisterNewChatAndVersionHandler) Handle(appChat *types.Chat) error {
+func (h *RegisterNewChatAndVersionHandler) Handle(ctx context.Context, appChat *types.Chat) error {
 	if appChat.IsPrivate() {
 		return apperrors.ErrChatIsPrivate
 	}
@@ -49,8 +49,8 @@ func (h *RegisterNewChatAndVersionHandler) Handle(appChat *types.Chat) error {
 
 	chatToSave := types.ChatToDomain(appChat)
 
-	doErr := h.service.DoOperationOnTx(func(ctx context.Context, tx storage.Tx) error {
-		if err := tx.InsertChat(ctx, chatToSave); err != nil {
+	doErr := h.service.DoOperationOnTx(ctx, func(opCtx context.Context, tx storage.Tx) error {
+		if err := tx.InsertChat(opCtx, chatToSave); err != nil {
 			return fmt.Errorf("insert chat: %w", err)
 		}
 
@@ -58,7 +58,7 @@ func (h *RegisterNewChatAndVersionHandler) Handle(appChat *types.Chat) error {
 			Chat: chatToSave,
 		}
 
-		if err := tx.InsertNewMagicVersion(ctx, chatVersionToSave); err != nil {
+		if err := tx.InsertNewMagicVersion(opCtx, chatVersionToSave); err != nil {
 			return fmt.Errorf("insert new chat magic version: %w", err)
 		}
 

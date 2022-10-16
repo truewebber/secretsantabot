@@ -31,9 +31,7 @@ func MustNewPostgres(connString string) *Postgres {
 	return p
 }
 
-func (p *Postgres) DoOperationOnTx(operation func(context.Context, storage.Tx) error) error {
-	ctx := context.Background()
-
+func (p *Postgres) DoOperationOnTx(ctx context.Context, operation func(context.Context, storage.Tx) error) error {
 	pgxTx, err := p.conn.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)

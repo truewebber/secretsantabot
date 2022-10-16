@@ -55,12 +55,12 @@ func (s *StorageTx) InsertChat(ctx context.Context, chat *chatdomain.Chat) error
 	return nil
 }
 
-const selectChatQuery = "SELECT admin_user_id FROM chats WHERE id=$1 AND deleted=false;"
+const selectChatByIDQuery = "SELECT admin_user_id FROM chats WHERE id=$1 AND deleted=false;"
 
 func (s *StorageTx) GetChatByTelegramID(ctx context.Context, id int64) (*chatdomain.Chat, error) {
 	var adminUserID int64
 
-	err := s.tx.QueryRow(ctx, selectChatQuery, id).Scan(&adminUserID)
+	err := s.tx.QueryRow(ctx, selectChatByIDQuery, id).Scan(&adminUserID)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, storage.ErrNotFound
@@ -113,23 +113,98 @@ func (s *StorageTx) GetLatestMagicVersion(
 	return version, nil
 }
 
+const selectEnrolledParticipantsQuery = `SELECT participant_user_id FROM magic_participants
+WHERE magic_chat_history_id=$1 AND deleted IS FALSE;`
+
 func (s *StorageTx) ListParticipants(ctx context.Context, v *chatdomain.MagicVersion) ([]chatdomain.Person, error) {
-	return []chatdomain.Person{}, nil
+	rows, err := s.tx.Query(ctx, selectEnrolledParticipantsQuery, v.ID)
+	if err != nil {
+		return nil, fmt.Errorf("query enrolled participants: %w", err)
+	}
+
+	defer rows.Close()
+
+	var participants []chatdomain.Person
+
+	for rows.Next() {
+		var p chatdomain.Person
+
+		if err := rows.Scan(&p.TelegramUserID); err != nil {
+			return nil, fmt.Errorf("scan row: %w", err)
+		}
+
+		participants = append(participants, p)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows: %w", err)
+	}
+
+	return participants, nil
 }
+
+const (
+	insertParticipantQuery = `INSERT INTO magic_participants (magic_chat_history_id, participant_user_id, deleted)
+VALUES ($1, $2, false) ON CONFLICT DO NOTHING;`
+
+	restoreParticipantQuery = "UPDATE magic_participants SET deleted=false WHERE id=$1;"
+
+	selectDeletedParticipantQuery = `SELECT id, deleted FROM magic_participants
+WHERE magic_chat_history_id=$1 AND participant_user_id=$2;`
+)
 
 func (s *StorageTx) InsertParticipant(
 	ctx context.Context,
 	version *chatdomain.MagicVersion,
 	person *chatdomain.Person,
 ) error {
+	var (
+		id      uint32
+		deleted bool
+	)
+
+	selectErr := s.tx.QueryRow(ctx, selectDeletedParticipantQuery, version.ID, person.TelegramUserID).Scan(&id, &deleted)
+
+	if errors.Is(selectErr, pgx.ErrNoRows) {
+		_, insertErr := s.tx.Exec(ctx, insertParticipantQuery, version.ID, person.TelegramUserID)
+		if insertErr != nil {
+			return fmt.Errorf("exec insert participant: %w", insertErr)
+		}
+
+		return nil
+	}
+
+	if selectErr != nil {
+		return fmt.Errorf("query row select participant: %w", selectErr)
+	}
+
+	if deleted {
+		if _, err := s.tx.Exec(ctx, restoreParticipantQuery, id); err != nil {
+			return fmt.Errorf("exec restore participant: %w", err)
+		}
+	}
+
 	return nil
 }
+
+const deleteParticipantQuery = `UPDATE magic_participants SET deleted=true
+WHERE magic_chat_history_id=$1 AND participant_user_id=$2;`
 
 func (s *StorageTx) DeleteParticipant(
 	ctx context.Context,
 	version *chatdomain.MagicVersion,
 	person *chatdomain.Person,
 ) error {
+	tag, err := s.tx.Exec(ctx, deleteParticipantQuery, version.ID, person.TelegramUserID)
+
+	if err != nil {
+		return fmt.Errorf("exec delete participant: %w", err)
+	}
+
+	if tag.RowsAffected() != 1 {
+		return fmt.Errorf("rows affected on delete: %v", tag.RowsAffected())
+	}
+
 	return nil
 }
 

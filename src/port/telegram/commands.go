@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"context"
 	"fmt"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -18,24 +19,24 @@ const (
 	StartCommand     = "start"
 )
 
-func (t *Bot) processCommand(command string, message *tgbotapi.Message) {
+func (t *Bot) processCommand(ctx context.Context, command string, message *tgbotapi.Message) {
 	var err error
 
 	switch command {
 	case EnrollCommand:
-		err = t.Enroll(message)
+		err = t.Enroll(ctx, message)
 	case DisEnrollCommand:
-		err = t.DisEnroll(message)
+		err = t.DisEnroll(ctx, message)
 	case ListCommand:
-		err = t.List(message)
+		err = t.List(ctx, message)
 	case MagicCommand:
-		err = t.Magic(message)
+		err = t.Magic(ctx, message)
 	case MyCommand:
-		err = t.My(message)
+		err = t.My(ctx, message)
 	case HelpCommand:
-		err = t.Help(message)
+		err = t.Help(ctx, message)
 	case StartCommand:
-		err = t.Start(message)
+		err = t.Start(ctx, message)
 	}
 
 	if err != nil {
@@ -48,7 +49,7 @@ func (t *Bot) processCommand(command string, message *tgbotapi.Message) {
 }
 
 //nolint:dupl // no sense to merge this func
-func (t *Bot) Enroll(message *tgbotapi.Message) error {
+func (t *Bot) Enroll(ctx context.Context, message *tgbotapi.Message) error {
 	person, err := t.builder.buildPersonFromMessage(message)
 	if err != nil {
 		return fmt.Errorf("build person from message: %w", err)
@@ -59,7 +60,7 @@ func (t *Bot) Enroll(message *tgbotapi.Message) error {
 		return fmt.Errorf("build person from message: %w", err)
 	}
 
-	if err := t.application.Commands.Enroll.Handle(chat, person); err != nil {
+	if err := t.application.Commands.Enroll.Handle(ctx, chat, person); err != nil {
 		return fmt.Errorf("handle enroll: %w", err)
 	}
 
@@ -73,7 +74,7 @@ func (t *Bot) Enroll(message *tgbotapi.Message) error {
 }
 
 //nolint:dupl // no sense to merge this func
-func (t *Bot) DisEnroll(message *tgbotapi.Message) error {
+func (t *Bot) DisEnroll(ctx context.Context, message *tgbotapi.Message) error {
 	person, err := t.builder.buildPersonFromMessage(message)
 	if err != nil {
 		return fmt.Errorf("build person from message: %w", err)
@@ -84,7 +85,7 @@ func (t *Bot) DisEnroll(message *tgbotapi.Message) error {
 		return fmt.Errorf("build person from message: %w", err)
 	}
 
-	if err := t.application.Commands.DisEnroll.Handle(chat, person); err != nil {
+	if err := t.application.Commands.DisEnroll.Handle(ctx, chat, person); err != nil {
 		return fmt.Errorf("handle disenroll: %w", err)
 	}
 
@@ -97,13 +98,13 @@ func (t *Bot) DisEnroll(message *tgbotapi.Message) error {
 	return nil
 }
 
-func (t *Bot) List(message *tgbotapi.Message) error {
+func (t *Bot) List(ctx context.Context, message *tgbotapi.Message) error {
 	chat, err := t.builder.buildChatFromMessage(message)
 	if err != nil {
 		return fmt.Errorf("build person from message: %w", err)
 	}
 
-	participants, err := t.application.Queries.List.Handle(chat)
+	participants, err := t.application.Queries.List.Handle(ctx, chat)
 	if err != nil {
 		return fmt.Errorf("handle list of participants: %w", err)
 	}
@@ -120,7 +121,7 @@ func (t *Bot) List(message *tgbotapi.Message) error {
 	return nil
 }
 
-func (t *Bot) Magic(message *tgbotapi.Message) error {
+func (t *Bot) Magic(ctx context.Context, message *tgbotapi.Message) error {
 	person, err := t.builder.buildPersonFromMessage(message)
 	if err != nil {
 		return fmt.Errorf("build person from message: %w", err)
@@ -131,7 +132,7 @@ func (t *Bot) Magic(message *tgbotapi.Message) error {
 		return fmt.Errorf("build person from message: %w", err)
 	}
 
-	handleErr := t.application.Commands.Magic.Handle(chat, person, func(p *types.Person) error {
+	handleErr := t.application.Commands.Magic.Handle(ctx, chat, person, func(p *types.Person) error {
 		return nil
 	})
 	if handleErr != nil {
@@ -141,7 +142,7 @@ func (t *Bot) Magic(message *tgbotapi.Message) error {
 	return nil
 }
 
-func (t *Bot) My(message *tgbotapi.Message) error {
+func (t *Bot) My(ctx context.Context, message *tgbotapi.Message) error {
 	giver, err := t.builder.buildPersonFromMessage(message)
 	if err != nil {
 		return fmt.Errorf("build person from message: %w", err)
@@ -152,7 +153,7 @@ func (t *Bot) My(message *tgbotapi.Message) error {
 		return fmt.Errorf("build person from message: %w", err)
 	}
 
-	_, handleErr := t.application.Queries.GetMyReceiver.Handle(chat, giver)
+	_, handleErr := t.application.Queries.GetMyReceiver.Handle(ctx, chat, giver)
 	if handleErr != nil {
 		return fmt.Errorf("handle get receiver by giver: %w", handleErr)
 	}
@@ -190,7 +191,7 @@ const helpText = "/enroll - enroll the game\n" +
 	"/help - show this message\n" +
 	"/start - register new chat (don't work with private messages)\n"
 
-func (t *Bot) Help(message *tgbotapi.Message) error {
+func (t *Bot) Help(_ context.Context, message *tgbotapi.Message) error {
 	replyMessage := tgbotapi.NewMessage(message.Chat.ID, helpText)
 
 	if _, err := t.bot.Send(replyMessage); err != nil {
@@ -207,13 +208,13 @@ const (
 		"After that, my inviter should begin the MAGIC (send message /magic)."
 )
 
-func (t *Bot) Start(message *tgbotapi.Message) error {
+func (t *Bot) Start(ctx context.Context, message *tgbotapi.Message) error {
 	chat, buildErr := t.builder.buildChatFromMessage(message)
 	if buildErr != nil {
 		return fmt.Errorf("build chat from message: %w", buildErr)
 	}
 
-	if err := t.application.Commands.RegisterNewChatAndVersion.Handle(chat); err != nil {
+	if err := t.application.Commands.RegisterNewChatAndVersion.Handle(ctx, chat); err != nil {
 		return fmt.Errorf("handle register new chat: %w", err)
 	}
 

@@ -4,7 +4,7 @@ Telegram Secret Santa bot
 **Build**
 
 ```bash
-go build -o ./secretsantabot ./cmd/secretsantabot/main.go
+go build -o ./secretsantabot ./cmd/secretsantabot/
 ```
 
 **Start bot**
@@ -25,18 +25,3 @@ TELEGRAM_TOKEN=000000:AAAAAAAAAA DATABASE_URL=postgresql://user:password@127.0.0
 ```
 
 ***
-
-**Heroku create new app**
-
-configure manifest module
-
-```bash
-$ heroku update beta
-$ heroku plugins:install @heroku-cli/plugin-manifest
-```
-
-create new app  
-
-```bash
-$ heroku apps:create --manifest -n -s container --region eu APP_NAME
-```
