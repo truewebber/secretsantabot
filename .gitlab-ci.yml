@@ -21,14 +21,14 @@ stages:
   tags:
     - docker
   image:
-    name: golangci/golangci-lint:v1.49.0
+    name: golangci/golangci-lint:v1.49.0-alpine
     entrypoint: [ "" ]
   script:
     - cd ${CI_GOLANG_APP_DIR}
     - golangci-lint run -c .golangci.yml -v ./...
 
 .test_go_code:
-  image: golang:1.18.0-buster
+  image: golang:1.19-alpine3.16
   tags:
     - docker
   script:
