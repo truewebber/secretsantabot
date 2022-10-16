@@ -187,6 +187,8 @@ func (s *StorageTx) InsertParticipant(
 	return nil
 }
 
+var errInvalidAmountRowsAffected = errors.New("invalid amount rows affected")
+
 const deleteParticipantQuery = `UPDATE magic_participants SET deleted=true
 WHERE magic_chat_history_id=$1 AND participant_user_id=$2;`
 
@@ -196,13 +198,12 @@ func (s *StorageTx) DeleteParticipant(
 	person *chatdomain.Person,
 ) error {
 	tag, err := s.tx.Exec(ctx, deleteParticipantQuery, version.ID, person.TelegramUserID)
-
 	if err != nil {
 		return fmt.Errorf("exec delete participant: %w", err)
 	}
 
 	if tag.RowsAffected() != 1 {
-		return fmt.Errorf("rows affected on delete: %v", tag.RowsAffected())
+		return fmt.Errorf("%w on delete: %v", errInvalidAmountRowsAffected, tag.RowsAffected())
 	}
 
 	return nil

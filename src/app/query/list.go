@@ -3,10 +3,10 @@ package query
 import (
 	"context"
 	"fmt"
-	"github.com/truewebber/secretsantabot/domain/chat"
 
 	apperrors "github.com/truewebber/secretsantabot/app/errors"
 	"github.com/truewebber/secretsantabot/app/types"
+	"github.com/truewebber/secretsantabot/domain/chat"
 	"github.com/truewebber/secretsantabot/domain/chat/storage"
 	"github.com/truewebber/secretsantabot/domain/log"
 )

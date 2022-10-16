@@ -21,8 +21,10 @@ func DomainToPerson(p *chat.Person) *Person {
 func DomainsToPersons(persons []chat.Person) []Person {
 	appPersons := make([]Person, 0, len(persons))
 
-	for _, p := range persons {
-		appPerson := DomainToPerson(&p)
+	for i := range persons {
+		p := &persons[i]
+
+		appPerson := DomainToPerson(p)
 
 		appPersons = append(appPersons, *appPerson)
 	}
