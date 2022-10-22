@@ -8,6 +8,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 
 	apperrors "github.com/truewebber/secretsantabot/app/errors"
+	"github.com/truewebber/secretsantabot/app/types"
 )
 
 const (
@@ -150,8 +151,8 @@ func (t *Bot) Magic(ctx context.Context, message *tgbotapi.Message) error {
 	if errors.Is(handleErr, apperrors.ErrAlreadyExists) {
 		replyMessage := t.builder.buildRestartChatMessage(chat)
 
-		if _, err := t.bot.Send(replyMessage); err != nil {
-			return fmt.Errorf("send message: %w", err)
+		if _, sendErr := t.bot.Send(replyMessage); sendErr != nil {
+			return fmt.Errorf("send message: %w", sendErr)
 		}
 
 		return nil
@@ -167,7 +168,7 @@ func (t *Bot) Magic(ctx context.Context, message *tgbotapi.Message) error {
 	}
 
 	for _, pair := range magic.Pairs {
-		if err := t.builder.notifyGiver(pair.Giver, pair.Receiver); err != nil {
+		if err := t.notifyGiver(chat, pair.Giver, pair.Receiver); err != nil {
 			return fmt.Errorf("notify giver: %w", err)
 		}
 	}
@@ -175,6 +176,19 @@ func (t *Bot) Magic(ctx context.Context, message *tgbotapi.Message) error {
 	replyMessage := t.builder.buildMagicMessage(chat)
 
 	if _, err := t.bot.Send(replyMessage); err != nil {
+		return fmt.Errorf("send message: %w", err)
+	}
+
+	return nil
+}
+
+func (t *Bot) notifyGiver(chat types.Chat, giver, receiver types.Person) error {
+	msg, err := t.builder.buildMyReceiverMessage(chat, giver, receiver)
+	if err != nil {
+		return fmt.Errorf("build message: %w", err)
+	}
+
+	if _, err := t.bot.Send(msg); err != nil {
 		return fmt.Errorf("send message: %w", err)
 	}
 

@@ -136,14 +136,14 @@ func (b *builder) listOfParticipantsToText(chat types.Chat, participants []types
 
 func (b *builder) buildMyReceiverMessage(
 	chat types.Chat,
-	recipient, receiver types.Person,
+	giver, receiver types.Person,
 ) (*tgbotapi.MessageConfig, error) {
 	text, err := b.getMyReceiverToText(chat, receiver)
 	if err != nil {
 		return nil, fmt.Errorf("receiver to text: %w", err)
 	}
 
-	replyMessage := tgbotapi.NewMessage(recipient.TelegramUserID, text)
+	replyMessage := tgbotapi.NewMessage(giver.TelegramUserID, text)
 
 	return &replyMessage, nil
 }
@@ -206,8 +206,4 @@ func (b *builder) buildRestartChatMessage(chat types.Chat) *tgbotapi.MessageConf
 	replyMessage := tgbotapi.NewMessage(chat.TelegramChatID, restartChatText)
 
 	return &replyMessage
-}
-
-func (b *builder) notifyGiver(_, _ types.Person) error {
-	return nil
 }
