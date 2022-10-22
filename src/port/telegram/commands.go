@@ -68,7 +68,7 @@ func (t *Bot) Enroll(ctx context.Context, message *tgbotapi.Message) error {
 	}
 
 	if handleErr != nil {
-		return fmt.Errorf("handle enroll: %w", err)
+		return fmt.Errorf("handle enroll: %w", handleErr)
 	}
 
 	replyMessage := t.builder.buildEnrollSuccessMessage(message.From, message.Chat)
@@ -99,7 +99,7 @@ func (t *Bot) DisEnroll(ctx context.Context, message *tgbotapi.Message) error {
 	}
 
 	if handleErr != nil {
-		return fmt.Errorf("handle disenroll: %w", err)
+		return fmt.Errorf("handle disenroll: %w", handleErr)
 	}
 
 	replyMessage := t.builder.buildDisEnrollSuccessMessage(message.From, message.Chat)
@@ -148,7 +148,12 @@ func (t *Bot) Magic(ctx context.Context, message *tgbotapi.Message) error {
 	handleErr := t.application.Commands.Magic.Handle(ctx, chat, person)
 
 	if errors.Is(handleErr, apperrors.ErrAlreadyExists) {
-		// send reply to restart game
+		replyMessage := t.builder.buildRestartChatMessage(chat)
+
+		if _, err := t.bot.Send(replyMessage); err != nil {
+			return fmt.Errorf("send message: %w", err)
+		}
+
 		return nil
 	}
 
@@ -188,6 +193,11 @@ func (t *Bot) My(ctx context.Context, message *tgbotapi.Message) error {
 	}
 
 	receiver, handleErr := t.application.Queries.GetMyReceiver.Handle(ctx, chat, giver)
+
+	if errors.Is(handleErr, apperrors.ErrNotFound) {
+		return nil
+	}
+
 	if handleErr != nil {
 		return fmt.Errorf("handle get receiver by giver: %w", handleErr)
 	}

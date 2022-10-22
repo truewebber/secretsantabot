@@ -166,7 +166,8 @@ func (b *builder) getMyReceiverToText(chat types.Chat, receiver types.Person) (s
 	return text, nil
 }
 
-const magicText = "Mosi mosi!"
+const magicText = "Ho-ho-ho!\nLet's the Christmas begin 🎁\nAll of you should receive the private message from me!\n" +
+	"If not, press @secrethellsantabot and press start or restart. After that you could press the /my command."
 
 func (b *builder) buildMagicMessage(chat types.Chat) *tgbotapi.MessageConfig {
 	replyMessage := tgbotapi.NewMessage(chat.TelegramChatID, magicText)
@@ -195,6 +196,14 @@ const helpText = "/enroll - enroll the game\n" +
 
 func (b *builder) buildHelpMessage(chat types.Chat) *tgbotapi.MessageConfig {
 	replyMessage := tgbotapi.NewMessage(chat.TelegramChatID, helpText)
+
+	return &replyMessage
+}
+
+const restartChatText = "Ho-ho-ho!\nMagic already happened!\nIf you wanna to make MAGIC again, do the restart command."
+
+func (b *builder) buildRestartChatMessage(chat types.Chat) *tgbotapi.MessageConfig {
+	replyMessage := tgbotapi.NewMessage(chat.TelegramChatID, restartChatText)
 
 	return &replyMessage
 }

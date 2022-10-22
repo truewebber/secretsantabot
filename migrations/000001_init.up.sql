@@ -44,5 +44,7 @@ CREATE TABLE IF NOT EXISTS magic_results
     FOREIGN KEY (participant_giver_id) REFERENCES magic_participants (id),
     FOREIGN KEY (participant_receiver_id) REFERENCES magic_participants (id)
 );
-CREATE UNIQUE INDEX IF NOT EXISTS magic__history_id__giver_id__receiver_id__uidx
-    ON magic_results (magic_chat_history_id, participant_giver_id, participant_receiver_id);
+CREATE UNIQUE INDEX IF NOT EXISTS magic__history_id__giver_id__uidx
+    ON magic_results (magic_chat_history_id, participant_giver_id);
+CREATE UNIQUE INDEX IF NOT EXISTS magic__history_id__receiver_id__uidx
+    ON magic_results (magic_chat_history_id, participant_receiver_id);

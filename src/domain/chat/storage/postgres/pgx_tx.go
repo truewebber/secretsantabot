@@ -225,7 +225,10 @@ func (s *pgxTx) InsertMagic(ctx context.Context, v chatdomain.MagicVersion, magi
 
 const insertMagicPairQuery = `INSERT INTO magic_results 
 (magic_chat_history_id, participant_giver_id, participant_receiver_id, deleted) 
-VALUES ($1, $2, $3, false);`
+SELECT $1, (SELECT id FROM magic_participants
+WHERE participant_user_id = $2 AND magic_chat_history_id = $1 AND deleted IS FALSE) a,
+(SELECT id FROM magic_participants
+WHERE participant_user_id = $3 AND magic_chat_history_id = $1 AND deleted IS FALSE) b, FALSE;`
 
 func insertMagicPairOnTx(
 	ctx context.Context,
@@ -245,13 +248,24 @@ func insertMagicPairOnTx(
 	return nil
 }
 
-const selectMagicPairQuery = `SELECT participant_giver_id, participant_receiver_id FROM magic_results
-WHERE magic_chat_history_id=$1 AND deleted IS FALSE;`
+const selectMagicPairsQuery = `
+WITH filtered_magic AS (
+    SELECT participant_giver_id, participant_receiver_id FROM magic_results
+    WHERE magic_chat_history_id = $1 AND deleted IS FALSE
+),
+filtered_participants AS (
+    SELECT id, participant_user_id FROM magic_participants
+    WHERE magic_chat_history_id = $1 AND deleted IS FALSE
+)
+SELECT giver.participant_user_id, receiver.participant_user_id
+FROM filtered_magic m
+LEFT JOIN filtered_participants giver ON giver.id = m.participant_giver_id
+LEFT JOIN filtered_participants receiver ON receiver.id = m.participant_receiver_id;`
 
 func (s *pgxTx) GetMagic(ctx context.Context, v chatdomain.MagicVersion) (chatdomain.Magic, error) {
-	rows, err := s.tx.Query(ctx, selectMagicPairQuery, v.ID)
+	rows, err := s.tx.Query(ctx, selectMagicPairsQuery, v.ID)
 	if err != nil {
-		return chatdomain.Magic{}, fmt.Errorf("query select magic pair: %w", err)
+		return chatdomain.Magic{}, fmt.Errorf("query select magic pairs: %w", err)
 	}
 
 	defer rows.Close()
@@ -279,6 +293,40 @@ func (s *pgxTx) GetMagic(ctx context.Context, v chatdomain.MagicVersion) (chatdo
 	return chatdomain.Magic{
 		Pairs: pairs,
 	}, nil
+}
+
+const selectMagicPairFilteredByGiverQuery = `
+WITH filtered_magic AS (
+    SELECT participant_giver_id, participant_receiver_id FROM magic_results
+    WHERE magic_chat_history_id = $1 AND deleted IS FALSE
+),
+filtered_participants AS (
+    SELECT id, participant_user_id FROM magic_participants
+    WHERE magic_chat_history_id = $1 AND deleted IS FALSE
+)
+SELECT receiver.participant_user_id
+FROM filtered_magic m
+LEFT JOIN filtered_participants giver ON giver.id = m.participant_giver_id
+LEFT JOIN filtered_participants receiver ON receiver.id = m.participant_receiver_id
+WHERE giver.participant_user_id = $2;`
+
+func (s *pgxTx) GetMagicRecipient(
+	ctx context.Context, v chatdomain.MagicVersion, giver chatdomain.Person,
+) (chatdomain.Person, error) {
+	receiver := chatdomain.Person{}
+
+	err := s.tx.QueryRow(ctx, selectMagicPairFilteredByGiverQuery, v.ID, giver.TelegramUserID).
+		Scan(&receiver.TelegramUserID)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return chatdomain.Person{}, storage.ErrNotFound
+	}
+
+	if err != nil {
+		return chatdomain.Person{}, fmt.Errorf("query select magic pair: %w", err)
+	}
+
+	return receiver, nil
 }
 
 const lockQuery = "SELECT pg_advisory_xact_lock($1);"
