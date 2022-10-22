@@ -27,7 +27,7 @@ const (
 	selectDeletedChatQuery = "SELECT admin_user_id, deleted FROM chats WHERE id=$1;"
 )
 
-func (s *pgxTx) InsertChat(ctx context.Context, chat *chatdomain.Chat) error {
+func (s *pgxTx) InsertChat(ctx context.Context, chat chatdomain.Chat) error {
 	var deleted bool
 
 	selectErr := s.tx.QueryRow(ctx, selectDeletedChatQuery, chat.TelegramChatID).
@@ -46,10 +46,12 @@ func (s *pgxTx) InsertChat(ctx context.Context, chat *chatdomain.Chat) error {
 		return fmt.Errorf("query row select chat: %w", selectErr)
 	}
 
-	if deleted {
-		if _, err := s.tx.Exec(ctx, restoreChatQuery, chat.TelegramChatID); err != nil {
-			return fmt.Errorf("exec restore chat: %w", err)
-		}
+	if !deleted {
+		return storage.ErrAlreadyExists
+	}
+
+	if _, err := s.tx.Exec(ctx, restoreChatQuery, chat.TelegramChatID); err != nil {
+		return fmt.Errorf("exec restore chat: %w", err)
 	}
 
 	return nil
@@ -57,21 +59,21 @@ func (s *pgxTx) InsertChat(ctx context.Context, chat *chatdomain.Chat) error {
 
 const selectChatByIDQuery = "SELECT admin_user_id FROM chats WHERE id=$1 AND deleted=false;"
 
-func (s *pgxTx) GetChatByTelegramID(ctx context.Context, id int64) (*chatdomain.Chat, error) {
+func (s *pgxTx) GetChatByTelegramID(ctx context.Context, id int64) (chatdomain.Chat, error) {
 	var adminUserID int64
 
 	err := s.tx.QueryRow(ctx, selectChatByIDQuery, id).Scan(&adminUserID)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, storage.ErrNotFound
+		return chatdomain.Chat{}, storage.ErrNotFound
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("query row select chat: %w", err)
+		return chatdomain.Chat{}, fmt.Errorf("query row select chat: %w", err)
 	}
 
-	return &chatdomain.Chat{
-		Admin: &chatdomain.Person{
+	return chatdomain.Chat{
+		Admin: chatdomain.Person{
 			TelegramUserID: adminUserID,
 		},
 		TelegramChatID: id,
@@ -81,7 +83,7 @@ func (s *pgxTx) GetChatByTelegramID(ctx context.Context, id int64) (*chatdomain.
 const insertMagicVersionQuery = `INSERT INTO magic_chat_history (chat_id, deleted)
 VALUES ($1, false) RETURNING id;`
 
-func (s *pgxTx) InsertNewMagicVersion(ctx context.Context, version *chatdomain.MagicVersion) error {
+func (s *pgxTx) InsertNewMagicVersion(ctx context.Context, version chatdomain.MagicVersion) error {
 	if err := s.tx.QueryRow(ctx, insertMagicVersionQuery, version.Chat.TelegramChatID).Scan(&version.ID); err != nil {
 		return fmt.Errorf("exec insert magic version: %w", err)
 	}
@@ -94,20 +96,20 @@ ORDER BY id DESC LIMIT 1;`
 
 func (s *pgxTx) GetLatestMagicVersion(
 	ctx context.Context,
-	chat *chatdomain.Chat,
-) (*chatdomain.MagicVersion, error) {
-	version := &chatdomain.MagicVersion{
+	chat chatdomain.Chat,
+) (chatdomain.MagicVersion, error) {
+	version := chatdomain.MagicVersion{
 		Chat: chat,
 	}
 
 	err := s.tx.QueryRow(ctx, selectLatestMagicVersionQuery, chat.TelegramChatID).Scan(&version.ID)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, storage.ErrNotFound
+		return chatdomain.MagicVersion{}, storage.ErrNotFound
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("exec select latest magic version: %w", err)
+		return chatdomain.MagicVersion{}, fmt.Errorf("exec select latest magic version: %w", err)
 	}
 
 	return version, nil
@@ -116,7 +118,7 @@ func (s *pgxTx) GetLatestMagicVersion(
 const selectEnrolledParticipantsQuery = `SELECT participant_user_id FROM magic_participants
 WHERE magic_chat_history_id=$1 AND deleted IS FALSE;`
 
-func (s *pgxTx) ListParticipants(ctx context.Context, v *chatdomain.MagicVersion) ([]chatdomain.Person, error) {
+func (s *pgxTx) ListParticipants(ctx context.Context, v chatdomain.MagicVersion) ([]chatdomain.Person, error) {
 	rows, err := s.tx.Query(ctx, selectEnrolledParticipantsQuery, v.ID)
 	if err != nil {
 		return nil, fmt.Errorf("query enrolled participants: %w", err)
@@ -155,8 +157,8 @@ WHERE magic_chat_history_id=$1 AND participant_user_id=$2;`
 
 func (s *pgxTx) InsertParticipant(
 	ctx context.Context,
-	version *chatdomain.MagicVersion,
-	person *chatdomain.Person,
+	version chatdomain.MagicVersion,
+	person chatdomain.Person,
 ) error {
 	var (
 		id      uint32
@@ -178,10 +180,12 @@ func (s *pgxTx) InsertParticipant(
 		return fmt.Errorf("query row select participant: %w", selectErr)
 	}
 
-	if deleted {
-		if _, err := s.tx.Exec(ctx, restoreParticipantQuery, id); err != nil {
-			return fmt.Errorf("exec restore participant: %w", err)
-		}
+	if !deleted {
+		return storage.ErrAlreadyExists
+	}
+
+	if _, err := s.tx.Exec(ctx, restoreParticipantQuery, id); err != nil {
+		return fmt.Errorf("exec restore participant: %w", err)
 	}
 
 	return nil
@@ -194,24 +198,24 @@ WHERE magic_chat_history_id=$1 AND participant_user_id=$2;`
 
 func (s *pgxTx) DeleteParticipant(
 	ctx context.Context,
-	version *chatdomain.MagicVersion,
-	person *chatdomain.Person,
+	version chatdomain.MagicVersion,
+	person chatdomain.Person,
 ) error {
 	tag, err := s.tx.Exec(ctx, deleteParticipantQuery, version.ID, person.TelegramUserID)
 	if err != nil {
 		return fmt.Errorf("exec delete participant: %w", err)
 	}
 
-	if tag.RowsAffected() != 1 {
-		return fmt.Errorf("%w on delete: %v", errInvalidAmountRowsAffected, tag.RowsAffected())
+	if tag.RowsAffected() == 1 {
+		return nil
 	}
 
-	return nil
+	return fmt.Errorf("%w on delete: %v", errInvalidAmountRowsAffected, tag.RowsAffected())
 }
 
-func (s *pgxTx) InsertMagic(ctx context.Context, v *chatdomain.MagicVersion, magic chatdomain.Magic) error {
-	for i := range magic.Data {
-		if err := insertMagicPairOnTx(ctx, s.tx, v, magic.Data[i]); err != nil {
+func (s *pgxTx) InsertMagic(ctx context.Context, v chatdomain.MagicVersion, magic chatdomain.Magic) error {
+	for i := range magic.Pairs {
+		if err := insertMagicPairOnTx(ctx, s.tx, v, magic.Pairs[i]); err != nil {
 			return fmt.Errorf("insert magic pair on tx: %w", err)
 		}
 	}
@@ -226,7 +230,7 @@ VALUES ($1, $2, $3, false);`
 func insertMagicPairOnTx(
 	ctx context.Context,
 	tx pgx.Tx,
-	v *chatdomain.MagicVersion,
+	v chatdomain.MagicVersion,
 	pair chatdomain.GiverReceiverPair,
 ) error {
 	tag, err := tx.Exec(ctx, insertMagicPairQuery, v.ID, pair.Giver.TelegramUserID, pair.Receiver.TelegramUserID)
@@ -244,7 +248,7 @@ func insertMagicPairOnTx(
 const selectMagicPairQuery = `SELECT participant_giver_id, participant_receiver_id FROM magic_results
 WHERE magic_chat_history_id=$1 AND deleted IS FALSE;`
 
-func (s *pgxTx) GetMagic(ctx context.Context, v *chatdomain.MagicVersion) (chatdomain.Magic, error) {
+func (s *pgxTx) GetMagic(ctx context.Context, v chatdomain.MagicVersion) (chatdomain.Magic, error) {
 	rows, err := s.tx.Query(ctx, selectMagicPairQuery, v.ID)
 	if err != nil {
 		return chatdomain.Magic{}, fmt.Errorf("query select magic pair: %w", err)
@@ -273,7 +277,7 @@ func (s *pgxTx) GetMagic(ctx context.Context, v *chatdomain.MagicVersion) (chatd
 	}
 
 	return chatdomain.Magic{
-		Data: nil,
+		Pairs: pairs,
 	}, nil
 }
 

@@ -33,27 +33,27 @@ var (
 	errUserIsNil = errors.New("user is nil")
 )
 
-func (*builder) buildPersonFromMessage(message *tgbotapi.Message) (*types.Person, error) {
+func (*builder) buildPersonFromMessage(message *tgbotapi.Message) (types.Person, error) {
 	if message.From == nil {
-		return nil, errUserIsNil
+		return types.Person{}, errUserIsNil
 	}
 
 	if message.Chat == nil {
-		return nil, errChatIsNil
+		return types.Person{}, errChatIsNil
 	}
 
-	return &types.Person{
+	return types.Person{
 		TelegramUserID: int64(message.From.ID),
 	}, nil
 }
 
-func (b *builder) buildChatFromMessage(message *tgbotapi.Message) (*types.Chat, error) {
+func (b *builder) buildChatFromMessage(message *tgbotapi.Message) (types.Chat, error) {
 	person, err := b.buildPersonFromMessage(message)
 	if err != nil {
-		return nil, fmt.Errorf("build person from message: %w", err)
+		return types.Chat{}, fmt.Errorf("build person from message: %w", err)
 	}
 
-	return &types.Chat{
+	return types.Chat{
 		ChatType:       b.buildChatType(message.Chat),
 		TelegramChatID: message.Chat.ID,
 		Admin:          person,
@@ -92,7 +92,8 @@ func (*builder) buildDisEnrollSuccessMessage(from *tgbotapi.User, chat *tgbotapi
 	return &replyMessage
 }
 
-func (b *builder) buildListOfParticipantsMessage(chat *types.Chat, participants []types.Person,
+func (b *builder) buildListOfParticipantsMessage(
+	chat types.Chat, participants []types.Person,
 ) (*tgbotapi.MessageConfig, error) {
 	text, err := b.listOfParticipantsToText(chat, participants)
 	if err != nil {
@@ -106,7 +107,7 @@ func (b *builder) buildListOfParticipantsMessage(chat *types.Chat, participants 
 
 const ListIsEmptyMessage = "No one person has enroll yet."
 
-func (b *builder) listOfParticipantsToText(chat *types.Chat, participants []types.Person) (string, error) {
+func (b *builder) listOfParticipantsToText(chat types.Chat, participants []types.Person) (string, error) {
 	if len(participants) == 0 {
 		return ListIsEmptyMessage, nil
 	}
@@ -134,8 +135,8 @@ func (b *builder) listOfParticipantsToText(chat *types.Chat, participants []type
 }
 
 func (b *builder) buildMyReceiverMessage(
-	chat *types.Chat,
-	recipient, receiver *types.Person,
+	chat types.Chat,
+	recipient, receiver types.Person,
 ) (*tgbotapi.MessageConfig, error) {
 	text, err := b.getMyReceiverToText(chat, receiver)
 	if err != nil {
@@ -149,7 +150,7 @@ func (b *builder) buildMyReceiverMessage(
 
 const getMyReceiverMessageTemplate = "Hey! Your target is `%s %s%s`"
 
-func (b *builder) getMyReceiverToText(chat *types.Chat, receiver *types.Person) (string, error) {
+func (b *builder) getMyReceiverToText(chat types.Chat, receiver types.Person) (string, error) {
 	user, err := b.getTelegramUser(chat.TelegramChatID, receiver.TelegramUserID)
 	if err != nil {
 		return "", fmt.Errorf("get telegram user: %w", err)
@@ -163,4 +164,41 @@ func (b *builder) getMyReceiverToText(chat *types.Chat, receiver *types.Person) 
 	text := fmt.Sprintf(getMyReceiverMessageTemplate, user.FirstName, user.LastName, usernameText)
 
 	return text, nil
+}
+
+const magicText = "Mosi mosi!"
+
+func (b *builder) buildMagicMessage(chat types.Chat) *tgbotapi.MessageConfig {
+	replyMessage := tgbotapi.NewMessage(chat.TelegramChatID, magicText)
+
+	return &replyMessage
+}
+
+func (b *builder) buildStartMessage(chat types.Chat) *tgbotapi.MessageConfig {
+	const startText = "Ho-ho-ho!\nWelcome guys and Merry Christmas 🎁\n\nTo start game, every " +
+		"one who wants to participate need to send message /enroll to the chat, also, you need " +
+		"to allow me to write to you in direct. Press @secrethellsantabot and press start or restart.\n" +
+		"After that, my inviter should begin the MAGIC (send message /magic)."
+
+	replyMessage := tgbotapi.NewMessage(chat.TelegramChatID, startText)
+
+	return &replyMessage
+}
+
+const helpText = "/enroll - enroll the game\n" +
+	"/disenroll - stop your enroll (only before magic starts)\n" +
+	"/list - list all enrolling people\n" +
+	"/magic - start the game (only admin)\n" +
+	"/my - Secret Santa will resend magic info for you (only in private chat with me)\n" +
+	"/help - show this message\n" +
+	"/start - register new chat (don't work with private messages)\n"
+
+func (b *builder) buildHelpMessage(chat types.Chat) *tgbotapi.MessageConfig {
+	replyMessage := tgbotapi.NewMessage(chat.TelegramChatID, helpText)
+
+	return &replyMessage
+}
+
+func (b *builder) notifyGiver(_, _ types.Person) error {
+	return nil
 }

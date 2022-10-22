@@ -31,7 +31,7 @@ func MustNewDisEnrollHandler(service storage.Storage, logger log.Logger) *DisEnr
 	return h
 }
 
-func (h *DisEnrollHandler) Handle(ctx context.Context, appChat *types.Chat, participant *types.Person) error {
+func (h *DisEnrollHandler) Handle(ctx context.Context, appChat types.Chat, participant types.Person) error {
 	if appChat.IsNotAGroup() {
 		return apperrors.ErrChatTypeIsUnsupported
 	}
@@ -45,8 +45,8 @@ func (h *DisEnrollHandler) Handle(ctx context.Context, appChat *types.Chat, part
 			return fmt.Errorf("get latest magic version: %w", err)
 		}
 
-		if err := tx.DeleteParticipant(opCtx, version, domainParticipant); err != nil {
-			return fmt.Errorf("delete participant: %w", err)
+		if deleteErr := tx.DeleteParticipant(opCtx, version, domainParticipant); deleteErr != nil {
+			return fmt.Errorf("delete participant: %w", deleteErr)
 		}
 
 		return nil

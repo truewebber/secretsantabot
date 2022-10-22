@@ -11,20 +11,20 @@ import (
 	"github.com/truewebber/secretsantabot/domain/log"
 )
 
-type ListHandler struct {
+type ListParticipantsHandler struct {
 	service storage.Storage
 }
 
-func NewListHandler(service storage.Storage, logger log.Logger) (*ListHandler, error) {
+func NewListParticipantsHandler(service storage.Storage, logger log.Logger) (*ListParticipantsHandler, error) {
 	if service == nil || logger == nil {
 		return nil, errServiceIsNil
 	}
 
-	return &ListHandler{service: service}, nil
+	return &ListParticipantsHandler{service: service}, nil
 }
 
-func MustNewListHandler(service storage.Storage, logger log.Logger) *ListHandler {
-	h, err := NewListHandler(service, logger)
+func MustNewListParticipantsHandler(service storage.Storage, logger log.Logger) *ListParticipantsHandler {
+	h, err := NewListParticipantsHandler(service, logger)
 	if err != nil {
 		panic(err)
 	}
@@ -32,7 +32,7 @@ func MustNewListHandler(service storage.Storage, logger log.Logger) *ListHandler
 	return h
 }
 
-func (h *ListHandler) Handle(ctx context.Context, appChat *types.Chat) ([]types.Person, error) {
+func (h *ListParticipantsHandler) Handle(ctx context.Context, appChat types.Chat) ([]types.Person, error) {
 	if appChat.IsNotAGroup() {
 		return nil, apperrors.ErrChatTypeIsUnsupported
 	}

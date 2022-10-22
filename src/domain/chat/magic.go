@@ -2,16 +2,16 @@ package chat
 
 type (
 	Magic struct {
-		Data []GiverReceiverPair
+		Pairs []GiverReceiverPair
 	}
 
 	GiverReceiverPair struct {
-		Giver    *Person
-		Receiver *Person
+		Giver    Person
+		Receiver Person
 	}
 
 	MagicVersion struct {
-		Chat *Chat
+		Chat Chat
 		ID   uint64
 	}
 )

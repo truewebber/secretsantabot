@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	apperrors "github.com/truewebber/secretsantabot/app/errors"
@@ -32,7 +33,7 @@ func MustNewEnrollHandler(service storage.Storage, logger log.Logger) *EnrollHan
 	return h
 }
 
-func (h *EnrollHandler) Handle(ctx context.Context, appChat *types.Chat, participant *types.Person) error {
+func (h *EnrollHandler) Handle(ctx context.Context, appChat types.Chat, participant types.Person) error {
 	if appChat.IsNotAGroup() {
 		return apperrors.ErrChatTypeIsUnsupported
 	}
@@ -50,8 +51,14 @@ func (h *EnrollHandler) Handle(ctx context.Context, appChat *types.Chat, partici
 
 		participantToSave := castParticipantToDomain(participant)
 
-		if err := storageTx.InsertParticipant(opCtx, version, participantToSave); err != nil {
-			return fmt.Errorf("insert new participant: %w", err)
+		insertErr := storageTx.InsertParticipant(opCtx, version, participantToSave)
+
+		if errors.Is(insertErr, storage.ErrAlreadyExists) {
+			return apperrors.ErrAlreadyExists
+		}
+
+		if insertErr != nil {
+			return fmt.Errorf("insert new participant: %w", insertErr)
 		}
 
 		return nil
@@ -64,8 +71,8 @@ func (h *EnrollHandler) Handle(ctx context.Context, appChat *types.Chat, partici
 	return nil
 }
 
-func castParticipantToDomain(p *types.Person) *chatdomain.Person {
-	return &chatdomain.Person{
+func castParticipantToDomain(p types.Person) chatdomain.Person {
+	return chatdomain.Person{
 		TelegramUserID: p.TelegramUserID,
 	}
 }

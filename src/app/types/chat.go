@@ -3,8 +3,8 @@ package types
 import "github.com/truewebber/secretsantabot/domain/chat"
 
 type Chat struct {
-	Admin          *Person
 	Participants   []Person
+	Admin          Person
 	TelegramChatID int64
 	ChatType       ChatType
 }
@@ -29,8 +29,8 @@ func (c *Chat) IsUnsupported() bool {
 	return c.ChatType == ChatTypeUnsupported
 }
 
-func ChatToDomain(c *Chat) *chat.Chat {
-	return &chat.Chat{
+func ChatToDomain(c Chat) chat.Chat {
+	return chat.Chat{
 		Admin:          PersonToDomain(c.Admin),
 		TelegramChatID: c.TelegramChatID,
 	}

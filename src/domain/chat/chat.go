@@ -1,6 +1,6 @@
 package chat
 
 type Chat struct {
-	Admin          *Person
+	Admin          Person
 	TelegramChatID int64
 }

@@ -20,7 +20,8 @@ type (
 	}
 
 	Queries struct {
-		GetMyReceiver *query.GetMyReceiverHandler
-		List          *query.ListHandler
+		GetMagic         *query.GetMagicHandler
+		GetMyReceiver    *query.GetMyReceiverHandler
+		ListParticipants *query.ListParticipantsHandler
 	}
 )

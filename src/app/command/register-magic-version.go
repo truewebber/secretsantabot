@@ -38,14 +38,14 @@ func MustNewRegisterMagicVersionHandler(
 	return h
 }
 
-func (h *RegisterMagicVersion) Handle(ctx context.Context, appChat *types.Chat) error {
+func (h *RegisterMagicVersion) Handle(ctx context.Context, appChat types.Chat) error {
 	if appChat.IsNotAGroup() {
 		return apperrors.ErrChatTypeIsUnsupported
 	}
 
 	chatToSave := types.ChatToDomain(appChat)
 
-	chatVersionToSave := &chat.MagicVersion{
+	chatVersionToSave := chat.MagicVersion{
 		Chat: chatToSave,
 	}
 

@@ -32,12 +32,12 @@ func MustNewGetMyReceiverHandler(service storage.Storage, logger log.Logger) *Ge
 
 func (h *GetMyReceiverHandler) Handle(
 	ctx context.Context,
-	appChat *types.Chat,
-	giver *types.Person,
-) (*types.Person, error) {
+	appChat types.Chat,
+	giver types.Person,
+) (types.Person, error) {
 	if appChat.IsUnsupported() {
-		return nil, apperrors.ErrChatTypeIsUnsupported
+		return types.Person{}, apperrors.ErrChatTypeIsUnsupported
 	}
 
-	return &types.Person{}, nil
+	return giver, nil
 }

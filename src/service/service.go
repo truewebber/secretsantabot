@@ -38,8 +38,9 @@ func MustNewApplication(cfg *Config) *app.Application {
 			Magic:                     command.MustNewMagicHandler(chatService, cfg.Logger),
 		},
 		Queries: app.Queries{
-			GetMyReceiver: query.MustNewGetMyReceiverHandler(chatService, cfg.Logger),
-			List:          query.MustNewListHandler(chatService, cfg.Logger),
+			GetMyReceiver:    query.MustNewGetMyReceiverHandler(chatService, cfg.Logger),
+			ListParticipants: query.MustNewListParticipantsHandler(chatService, cfg.Logger),
+			GetMagic:         query.MustNewGetMagicHandler(chatService, cfg.Logger),
 		},
 	}
 }

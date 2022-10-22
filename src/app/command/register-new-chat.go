@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	apperrors "github.com/truewebber/secretsantabot/app/errors"
@@ -38,7 +39,7 @@ func MustNewRegisterNewChatAndVersionHandler(
 	return h
 }
 
-func (h *RegisterNewChatAndVersionHandler) Handle(ctx context.Context, appChat *types.Chat) error {
+func (h *RegisterNewChatAndVersionHandler) Handle(ctx context.Context, appChat types.Chat) error {
 	if appChat.IsPrivate() {
 		return apperrors.ErrChatIsPrivate
 	}
@@ -50,11 +51,17 @@ func (h *RegisterNewChatAndVersionHandler) Handle(ctx context.Context, appChat *
 	chatToSave := types.ChatToDomain(appChat)
 
 	doErr := h.service.DoOperationOnTx(ctx, func(opCtx context.Context, tx storage.Tx) error {
-		if err := tx.InsertChat(opCtx, chatToSave); err != nil {
+		err := tx.InsertChat(opCtx, chatToSave)
+
+		if errors.Is(err, storage.ErrAlreadyExists) {
+			return apperrors.ErrAlreadyExists
+		}
+
+		if err != nil {
 			return fmt.Errorf("insert chat: %w", err)
 		}
 
-		chatVersionToSave := &chat.MagicVersion{
+		chatVersionToSave := chat.MagicVersion{
 			Chat: chatToSave,
 		}
 

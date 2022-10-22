@@ -4,30 +4,36 @@ import "github.com/truewebber/secretsantabot/domain/chat"
 
 type (
 	Magic struct {
-		Data []GiverReceiverPair
+		Pairs []GiverReceiverPair
 	}
 
 	GiverReceiverPair struct {
-		Giver    *Person
-		Receiver *Person
+		Giver    Person
+		Receiver Person
 	}
 )
 
-func MagicToDomain(magic *Magic) *chat.Magic {
-	return &chat.Magic{
-		Data: dataToDomain(magic.Data),
+func DomainToMagic(domainMagic chat.Magic) Magic {
+	return Magic{
+		Pairs: DomainToPairs(domainMagic.Pairs),
 	}
 }
 
-func dataToDomain(data []GiverReceiverPair) []chat.GiverReceiverPair {
-	chatData := make([]chat.GiverReceiverPair, 0, len(data))
+func DomainToPairs(domainPairs []chat.GiverReceiverPair) []GiverReceiverPair {
+	pairs := make([]GiverReceiverPair, 0, len(domainPairs))
 
-	for i := range data {
-		chatData = append(chatData, chat.GiverReceiverPair{
-			Giver:    PersonToDomain(data[i].Giver),
-			Receiver: PersonToDomain(data[i].Receiver),
-		})
+	for i := range domainPairs {
+		pair := DomainToPair(domainPairs[i])
+
+		pairs = append(pairs, pair)
 	}
 
-	return chatData
+	return pairs
+}
+
+func DomainToPair(domainPair chat.GiverReceiverPair) GiverReceiverPair {
+	return GiverReceiverPair{
+		Giver:    DomainToPerson(domainPair.Giver),
+		Receiver: DomainToPerson(domainPair.Receiver),
+	}
 }
