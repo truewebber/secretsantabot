@@ -3,7 +3,6 @@ package magic
 import (
 	"errors"
 	"math/rand"
-	"time"
 
 	"github.com/truewebber/secretsantabot/domain/chat"
 )
@@ -49,8 +48,6 @@ func makePairs(participants []chat.Person) []chat.GiverReceiverPair {
 }
 
 func shuffle(participants []chat.Person) {
-	rand.Seed(time.Now().UnixNano())
-
 	rand.Shuffle(
 		len(participants),
 		func(i, j int) {

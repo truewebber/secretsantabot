@@ -8,29 +8,22 @@ import (
 	"github.com/truewebber/secretsantabot/app/types"
 	"github.com/truewebber/secretsantabot/domain/chat"
 	"github.com/truewebber/secretsantabot/domain/chat/storage"
-	"github.com/truewebber/secretsantabot/domain/log"
 )
 
 type RegisterMagicVersion struct {
 	service storage.Storage
 }
 
-func NewRegisterMagicVersionHandler(
-	service storage.Storage,
-	logger log.Logger,
-) (*RegisterMagicVersion, error) {
-	if service == nil || logger == nil {
+func NewRegisterMagicVersionHandler(service storage.Storage) (*RegisterMagicVersion, error) {
+	if service == nil {
 		return nil, errServiceIsNil
 	}
 
 	return &RegisterMagicVersion{service: service}, nil
 }
 
-func MustNewRegisterMagicVersionHandler(
-	service storage.Storage,
-	logger log.Logger,
-) *RegisterMagicVersion {
-	h, err := NewRegisterMagicVersionHandler(service, logger)
+func MustNewRegisterMagicVersionHandler(service storage.Storage) *RegisterMagicVersion {
+	h, err := NewRegisterMagicVersionHandler(service)
 	if err != nil {
 		panic(err)
 	}

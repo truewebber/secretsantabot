@@ -8,23 +8,22 @@ import (
 	apperrors "github.com/truewebber/secretsantabot/app/errors"
 	"github.com/truewebber/secretsantabot/app/types"
 	"github.com/truewebber/secretsantabot/domain/chat/storage"
-	"github.com/truewebber/secretsantabot/domain/log"
 )
 
 type GetMagicHandler struct {
 	service storage.Storage
 }
 
-func NewGetMagicHandler(service storage.Storage, logger log.Logger) (*GetMagicHandler, error) {
-	if service == nil || logger == nil {
+func NewGetMagicHandler(service storage.Storage) (*GetMagicHandler, error) {
+	if service == nil {
 		return nil, errServiceIsNil
 	}
 
 	return &GetMagicHandler{service: service}, nil
 }
 
-func MustNewGetMagicHandler(service storage.Storage, logger log.Logger) *GetMagicHandler {
-	h, err := NewGetMagicHandler(service, logger)
+func MustNewGetMagicHandler(service storage.Storage) *GetMagicHandler {
+	h, err := NewGetMagicHandler(service)
 	if err != nil {
 		panic(err)
 	}

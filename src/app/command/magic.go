@@ -9,7 +9,6 @@ import (
 	"github.com/truewebber/secretsantabot/app/types"
 	"github.com/truewebber/secretsantabot/domain/chat"
 	"github.com/truewebber/secretsantabot/domain/chat/storage"
-	"github.com/truewebber/secretsantabot/domain/log"
 	"github.com/truewebber/secretsantabot/domain/magic"
 )
 
@@ -17,16 +16,16 @@ type MagicHandler struct {
 	service storage.Storage
 }
 
-func NewMagicHandler(service storage.Storage, logger log.Logger) (*MagicHandler, error) {
-	if service == nil || logger == nil {
+func NewMagicHandler(service storage.Storage) (*MagicHandler, error) {
+	if service == nil {
 		return nil, errServiceIsNil
 	}
 
 	return &MagicHandler{service: service}, nil
 }
 
-func MustNewMagicHandler(service storage.Storage, logger log.Logger) *MagicHandler {
-	h, err := NewMagicHandler(service, logger)
+func MustNewMagicHandler(service storage.Storage) *MagicHandler {
+	h, err := NewMagicHandler(service)
 	if err != nil {
 		panic(err)
 	}

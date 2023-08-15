@@ -44,7 +44,7 @@ func (p *pgxAdapter) DoOperationOnTx(
 
 	if opErr := operation(ctx, storageTx); opErr != nil {
 		if rollbackErr := pgxTx.Rollback(ctx); rollbackErr != nil {
-			return fmt.Errorf("rollback tx on do operation: %w: %v", opErr, rollbackErr)
+			return fmt.Errorf("rollback tx on do operation: %w: %w", opErr, rollbackErr)
 		}
 
 		return fmt.Errorf("do operation: %w", opErr)

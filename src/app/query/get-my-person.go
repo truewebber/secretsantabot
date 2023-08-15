@@ -8,23 +8,22 @@ import (
 	apperrors "github.com/truewebber/secretsantabot/app/errors"
 	"github.com/truewebber/secretsantabot/app/types"
 	"github.com/truewebber/secretsantabot/domain/chat/storage"
-	"github.com/truewebber/secretsantabot/domain/log"
 )
 
 type GetMyReceiverHandler struct {
 	service storage.Storage
 }
 
-func NewGetMyReceiverHandler(service storage.Storage, logger log.Logger) (*GetMyReceiverHandler, error) {
-	if service == nil || logger == nil {
+func NewGetMyReceiverHandler(service storage.Storage) (*GetMyReceiverHandler, error) {
+	if service == nil {
 		return nil, errServiceIsNil
 	}
 
 	return &GetMyReceiverHandler{service: service}, nil
 }
 
-func MustNewGetMyReceiverHandler(service storage.Storage, logger log.Logger) *GetMyReceiverHandler {
-	h, err := NewGetMyReceiverHandler(service, logger)
+func MustNewGetMyReceiverHandler(service storage.Storage) *GetMyReceiverHandler {
+	h, err := NewGetMyReceiverHandler(service)
 	if err != nil {
 		panic(err)
 	}
@@ -37,7 +36,7 @@ func (h *GetMyReceiverHandler) Handle(
 	appChat types.Chat,
 	giver types.Person,
 ) (types.Person, error) {
-	if appChat.IsUnsupported() {
+	if appChat.IsNotAGroup() {
 		return types.Person{}, apperrors.ErrChatTypeIsUnsupported
 	}
 

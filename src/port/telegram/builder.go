@@ -4,25 +4,25 @@ import (
 	"errors"
 	"fmt"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"gopkg.in/telebot.v3"
 
 	"github.com/truewebber/secretsantabot/app/types"
 )
 
 type builder struct {
-	bot *tgbotapi.BotAPI
+	bot *telebot.Bot
 }
 
-func newBuilder(bot *tgbotapi.BotAPI) builder {
+func newBuilder(bot *telebot.Bot) builder {
 	return builder{
 		bot: bot,
 	}
 }
 
-func (b *builder) getTelegramUser(chatID, userID int64) (*tgbotapi.User, error) {
-	member, err := b.bot.GetChatMember(tgbotapi.ChatConfigWithUser{ChatID: chatID, UserID: int(userID)})
+func (b *builder) getTelegramUser(chatID, userID int64) (*telebot.User, error) {
+	member, err := b.bot.ChatMemberOf(&telebot.Chat{ID: chatID}, &telebot.User{ID: userID})
 	if err != nil {
-		return nil, fmt.Errorf("get chat member: %w", err)
+		return nil, fmt.Errorf("chat member of: %w", err)
 	}
 
 	return member.User, nil
@@ -33,39 +33,39 @@ var (
 	errUserIsNil = errors.New("user is nil")
 )
 
-func (*builder) buildPersonFromMessage(message *tgbotapi.Message) (types.Person, error) {
-	if message.From == nil {
+func (*builder) buildPersonFromContext(ctx telebot.Context) (types.Person, error) {
+	if ctx.Message().Sender == nil {
 		return types.Person{}, errUserIsNil
 	}
 
-	if message.Chat == nil {
+	if ctx.Chat() == nil {
 		return types.Person{}, errChatIsNil
 	}
 
 	return types.Person{
-		TelegramUserID: int64(message.From.ID),
+		TelegramUserID: ctx.Message().Sender.ID,
 	}, nil
 }
 
-func (b *builder) buildChatFromMessage(message *tgbotapi.Message) (types.Chat, error) {
-	person, err := b.buildPersonFromMessage(message)
+func (b *builder) buildChatFromContext(ctx telebot.Context) (types.Chat, error) {
+	person, err := b.buildPersonFromContext(ctx)
 	if err != nil {
 		return types.Chat{}, fmt.Errorf("build person from message: %w", err)
 	}
 
 	return types.Chat{
-		ChatType:       b.buildChatType(message.Chat),
-		TelegramChatID: message.Chat.ID,
+		ChatType:       b.buildChatType(ctx.Chat()),
+		TelegramChatID: ctx.Chat().ID,
 		Admin:          person,
 	}, nil
 }
 
-func (b *builder) buildChatType(chat *tgbotapi.Chat) types.ChatType {
-	if chat.IsGroup() || chat.IsSuperGroup() {
+func (b *builder) buildChatType(chat *telebot.Chat) types.ChatType {
+	if chat.Type == telebot.ChatGroup || chat.Type == telebot.ChatSuperGroup {
 		return types.ChatTypeGroup
 	}
 
-	if chat.IsPrivate() {
+	if chat.Type == telebot.ChatPrivate {
 		return types.ChatTypePrivate
 	}
 
@@ -74,35 +74,25 @@ func (b *builder) buildChatType(chat *tgbotapi.Chat) types.ChatType {
 
 const enrollSuccessMessageTemplate = "Congratulations!\n%s %s is having part in Secret Santa."
 
-func (*builder) buildEnrollSuccessMessage(from *tgbotapi.User, chat *tgbotapi.Chat) *tgbotapi.MessageConfig {
-	text := fmt.Sprintf(enrollSuccessMessageTemplate, from.FirstName, from.LastName)
-
-	replyMessage := tgbotapi.NewMessage(chat.ID, text)
-
-	return &replyMessage
+func (b *builder) buildEnrollSuccessTextMessage(from *telebot.User) string {
+	return fmt.Sprintf(enrollSuccessMessageTemplate, from.FirstName, from.LastName)
 }
 
 const disEnrollSuccessMessageTemplate = "Sad to see you leaving =(\n%s %s is not in game from now."
 
-func (*builder) buildDisEnrollSuccessMessage(from *tgbotapi.User, chat *tgbotapi.Chat) *tgbotapi.MessageConfig {
-	text := fmt.Sprintf(disEnrollSuccessMessageTemplate, from.FirstName, from.LastName)
-
-	replyMessage := tgbotapi.NewMessage(chat.ID, text)
-
-	return &replyMessage
+func (*builder) buildDisEnrollSuccessTextMessage(from *telebot.User) string {
+	return fmt.Sprintf(disEnrollSuccessMessageTemplate, from.FirstName, from.LastName)
 }
 
-func (b *builder) buildListOfParticipantsMessage(
+func (b *builder) buildListOfParticipantsTextMessage(
 	chat types.Chat, participants []types.Person,
-) (*tgbotapi.MessageConfig, error) {
+) (string, error) {
 	text, err := b.listOfParticipantsToText(chat, participants)
 	if err != nil {
-		return nil, fmt.Errorf("list of participants to text: %w", err)
+		return "", fmt.Errorf("list of participants to text: %w", err)
 	}
 
-	replyMessage := tgbotapi.NewMessage(chat.TelegramChatID, text)
-
-	return &replyMessage, nil
+	return text, nil
 }
 
 const ListIsEmptyMessage = "No one person has enroll yet."
@@ -122,8 +112,8 @@ func (b *builder) listOfParticipantsToText(chat types.Chat, participants []types
 
 		text += fmt.Sprintf("%s %s", user.FirstName, user.LastName)
 
-		if user.UserName != "" {
-			text += fmt.Sprintf(" (@%s)", user.UserName)
+		if user.Username != "" {
+			text += fmt.Sprintf(" (@%s)", user.Username)
 		}
 
 		if index != len(participants)-1 {
@@ -134,18 +124,16 @@ func (b *builder) listOfParticipantsToText(chat types.Chat, participants []types
 	return text, nil
 }
 
-func (b *builder) buildMyReceiverMessage(
+func (b *builder) buildMyReceiverTextMessage(
 	chat types.Chat,
-	giver, receiver types.Person,
-) (*tgbotapi.MessageConfig, error) {
+	receiver types.Person,
+) (string, error) {
 	text, err := b.getMyReceiverToText(chat, receiver)
 	if err != nil {
-		return nil, fmt.Errorf("receiver to text: %w", err)
+		return "", fmt.Errorf("receiver to text: %w", err)
 	}
 
-	replyMessage := tgbotapi.NewMessage(giver.TelegramUserID, text)
-
-	return &replyMessage, nil
+	return text, nil
 }
 
 const getMyReceiverMessageTemplate = "Hey! Your target is `%s %s%s`"
@@ -157,8 +145,8 @@ func (b *builder) getMyReceiverToText(chat types.Chat, receiver types.Person) (s
 	}
 
 	var usernameText string
-	if user.UserName != "" {
-		usernameText = fmt.Sprintf(" (@%s)", user.UserName)
+	if user.Username != "" {
+		usernameText = fmt.Sprintf(" (@%s)", user.Username)
 	}
 
 	text := fmt.Sprintf(getMyReceiverMessageTemplate, user.FirstName, user.LastName, usernameText)
@@ -169,21 +157,17 @@ func (b *builder) getMyReceiverToText(chat types.Chat, receiver types.Person) (s
 const magicText = "Ho-ho-ho!\nLet's the Christmas begin 🎁\nAll of you should receive the private message from me!\n" +
 	"If not, press @secrethellsantabot and press start or restart. After that you could press the /my command."
 
-func (b *builder) buildMagicMessage(chat types.Chat) *tgbotapi.MessageConfig {
-	replyMessage := tgbotapi.NewMessage(chat.TelegramChatID, magicText)
-
-	return &replyMessage
+func (b *builder) buildMagicTextMessage() string {
+	return magicText
 }
 
-func (b *builder) buildStartMessage(chat types.Chat) *tgbotapi.MessageConfig {
-	const startText = "Ho-ho-ho!\nWelcome guys and Merry Christmas 🎁\n\nTo start game, every " +
-		"one who wants to participate need to send message /enroll to the chat, also, you need " +
-		"to allow me to write to you in direct. Press @secrethellsantabot and press start or restart.\n" +
-		"After that, my inviter should begin the MAGIC (send message /magic)."
+const startText = "Ho-ho-ho!\nWelcome guys and Merry Christmas 🎁\n\nTo start game, every " +
+	"one who wants to participate need to send message /enroll to the chat, also, you need " +
+	"to allow me to write to you in direct. Press @secrethellsantabot and press start or restart.\n" +
+	"After that, my inviter should begin the MAGIC (send message /magic)."
 
-	replyMessage := tgbotapi.NewMessage(chat.TelegramChatID, startText)
-
-	return &replyMessage
+func (b *builder) buildStartTextMessage() string {
+	return startText
 }
 
 const helpText = "/enroll - enroll the game\n" +
@@ -194,16 +178,12 @@ const helpText = "/enroll - enroll the game\n" +
 	"/help - show this message\n" +
 	"/start - register new chat (don't work with private messages)\n"
 
-func (b *builder) buildHelpMessage(chat types.Chat) *tgbotapi.MessageConfig {
-	replyMessage := tgbotapi.NewMessage(chat.TelegramChatID, helpText)
-
-	return &replyMessage
+func (b *builder) buildHelpTextMessage() string {
+	return helpText
 }
 
 const restartChatText = "Ho-ho-ho!\nMagic already happened!\nIf you wanna to make MAGIC again, do the restart command."
 
-func (b *builder) buildRestartChatMessage(chat types.Chat) *tgbotapi.MessageConfig {
-	replyMessage := tgbotapi.NewMessage(chat.TelegramChatID, restartChatText)
-
-	return &replyMessage
+func (b *builder) buildRestartChatTextMessage() string {
+	return restartChatText
 }

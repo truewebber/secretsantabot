@@ -9,23 +9,22 @@ import (
 	"github.com/truewebber/secretsantabot/app/types"
 	chatdomain "github.com/truewebber/secretsantabot/domain/chat"
 	"github.com/truewebber/secretsantabot/domain/chat/storage"
-	"github.com/truewebber/secretsantabot/domain/log"
 )
 
 type EnrollHandler struct {
 	service storage.Storage
 }
 
-func NewEnrollHandler(service storage.Storage, logger log.Logger) (*EnrollHandler, error) {
-	if service == nil || logger == nil {
+func NewEnrollHandler(service storage.Storage) (*EnrollHandler, error) {
+	if service == nil {
 		return nil, errServiceIsNil
 	}
 
 	return &EnrollHandler{service: service}, nil
 }
 
-func MustNewEnrollHandler(service storage.Storage, logger log.Logger) *EnrollHandler {
-	h, err := NewEnrollHandler(service, logger)
+func MustNewEnrollHandler(service storage.Storage) *EnrollHandler {
+	h, err := NewEnrollHandler(service)
 	if err != nil {
 		panic(err)
 	}

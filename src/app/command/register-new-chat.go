@@ -9,29 +9,22 @@ import (
 	"github.com/truewebber/secretsantabot/app/types"
 	"github.com/truewebber/secretsantabot/domain/chat"
 	"github.com/truewebber/secretsantabot/domain/chat/storage"
-	"github.com/truewebber/secretsantabot/domain/log"
 )
 
 type RegisterNewChatAndVersionHandler struct {
 	service storage.Storage
 }
 
-func NewRegisterNewChatAndVersionHandler(
-	service storage.Storage,
-	logger log.Logger,
-) (*RegisterNewChatAndVersionHandler, error) {
-	if service == nil || logger == nil {
+func NewRegisterNewChatAndVersionHandler(service storage.Storage) (*RegisterNewChatAndVersionHandler, error) {
+	if service == nil {
 		return nil, errServiceIsNil
 	}
 
 	return &RegisterNewChatAndVersionHandler{service: service}, nil
 }
 
-func MustNewRegisterNewChatAndVersionHandler(
-	service storage.Storage,
-	logger log.Logger,
-) *RegisterNewChatAndVersionHandler {
-	h, err := NewRegisterNewChatAndVersionHandler(service, logger)
+func MustNewRegisterNewChatAndVersionHandler(service storage.Storage) *RegisterNewChatAndVersionHandler {
+	h, err := NewRegisterNewChatAndVersionHandler(service)
 	if err != nil {
 		panic(err)
 	}

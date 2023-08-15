@@ -15,21 +15,19 @@ import (
 func main() {
 	logger := log.NewZapWrapper()
 
-	if err := run(logger); err != nil {
-		panic(err)
-	}
+	mustRun(logger)
 
 	if err := logger.Close(); err != nil {
 		panic(err)
 	}
 }
 
-func run(logger log.Logger) error {
+func mustRun(logger log.Logger) {
 	cfg := mustLoadConfig()
 
 	logger.Info("Config inited")
 
-	appConfig := service.NewConfig(service.ChatService{PostgresURI: cfg.PostgresURI}, logger)
+	appConfig := service.NewConfig(service.ChatService{PostgresURI: cfg.PostgresURI})
 	application := service.MustNewApplication(appConfig)
 	bot := telegram.MustNewTelegramBot(cfg.TelegramToken, application, logger)
 
@@ -37,13 +35,9 @@ func run(logger log.Logger) error {
 
 	ctx := signal.ContextClosableOnSignals(syscall.SIGINT, syscall.SIGTERM)
 
-	if err := bot.Run(ctx); err != nil {
-		return fmt.Errorf("bot run: %w", err)
-	}
+	bot.Run(ctx)
 
 	logger.Info("Application stopped")
-
-	return nil
 }
 
 type config struct {

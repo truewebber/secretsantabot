@@ -8,23 +8,22 @@ import (
 	"github.com/truewebber/secretsantabot/app/types"
 	"github.com/truewebber/secretsantabot/domain/chat"
 	"github.com/truewebber/secretsantabot/domain/chat/storage"
-	"github.com/truewebber/secretsantabot/domain/log"
 )
 
 type ListParticipantsHandler struct {
 	service storage.Storage
 }
 
-func NewListParticipantsHandler(service storage.Storage, logger log.Logger) (*ListParticipantsHandler, error) {
-	if service == nil || logger == nil {
+func NewListParticipantsHandler(service storage.Storage) (*ListParticipantsHandler, error) {
+	if service == nil {
 		return nil, errServiceIsNil
 	}
 
 	return &ListParticipantsHandler{service: service}, nil
 }
 
-func MustNewListParticipantsHandler(service storage.Storage, logger log.Logger) *ListParticipantsHandler {
-	h, err := NewListParticipantsHandler(service, logger)
+func MustNewListParticipantsHandler(service storage.Storage) *ListParticipantsHandler {
+	h, err := NewListParticipantsHandler(service)
 	if err != nil {
 		panic(err)
 	}
