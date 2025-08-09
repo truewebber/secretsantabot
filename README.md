@@ -25,3 +25,8 @@ TELEGRAM_TOKEN=000000:AAAAAAAAAA DATABASE_URL=postgresql://user:password@127.0.0
 ```
 
 ***
+
+Lint with [golangci-config](https://github.com/truewebber/golangci-config)
+```bash
+golangci-lint.sh -v run -c .golangci.local.yml ./...
+```
